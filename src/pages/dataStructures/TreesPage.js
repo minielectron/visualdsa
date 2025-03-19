@@ -587,19 +587,6 @@ const TreesPage = () => {
     return { nodes, edges };
   }, [containerRef]);
 
-  // Initialize a sample tree when the component mounts
-  useEffect(() => {
-    const initialTree = new TreeNodeClass(50);
-    initialTree.left = new TreeNodeClass(30);
-    initialTree.right = new TreeNodeClass(70);
-    initialTree.left.left = new TreeNodeClass(20);
-    initialTree.left.right = new TreeNodeClass(40);
-    initialTree.right.left = new TreeNodeClass(60);
-    initialTree.right.right = new TreeNodeClass(80);
-    
-    setRoot(initialTree);
-  }, []);
-
   // Update the tree layout whenever the root changes
   useEffect(() => {
     if (root && containerRef.current) {
@@ -689,16 +676,43 @@ const TreesPage = () => {
   const searchNode = (value, node = root, path = []) => {
     if (node === null) return { found: false, path };
     
-    const currentPath = [...path, node.value];
-    
-    if (value === node.value) {
-      return { found: true, path: currentPath };
-    }
-    
-    if (value < node.value) {
-      return searchNode(value, node.left, currentPath);
+    // Different search implementations based on tree type
+    if (treeType === 'heap') {
+      // For heap, we need to do a breadth-first search
+      const array = treeToArray(node);
+      const foundIndex = array.findIndex(n => n.value === value);
+      
+      if (foundIndex === -1) {
+        return { found: false, path: [] };
+      }
+      
+      // Construct path for heap search
+      const pathNodes = [];
+      let currentIndex = foundIndex;
+      
+      // Add the found node
+      pathNodes.unshift(array[currentIndex].value);
+      
+      // Add all ancestors to the path
+      while (currentIndex > 0) {
+        currentIndex = getParentIndex(currentIndex);
+        pathNodes.unshift(array[currentIndex].value);
+      }
+      
+      return { found: true, path: pathNodes };
     } else {
-      return searchNode(value, node.right, currentPath);
+      // For BST and AVL trees, use the standard binary search
+      const currentPath = [...path, node.value];
+      
+      if (value === node.value) {
+        return { found: true, path: currentPath };
+      }
+      
+      if (value < node.value) {
+        return searchNode(value, node.left, currentPath);
+      } else {
+        return searchNode(value, node.right, currentPath);
+      }
     }
   };
 
@@ -729,14 +743,25 @@ const TreesPage = () => {
     const animateInsertion = async () => {
       for (let i = 0; i < path.length; i++) {
         setHighlightPath([path[i]]);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, animationSpeed / 2));
       }
       
       // Create a new tree with the inserted node
       const newRoot = root ? { ...root } : null;
       const updatedRoot = insertNode(numValue, newRoot);
       setRoot(updatedRoot);
-      showMessage(`Inserted ${numValue} into the tree`);
+      
+      // Show appropriate message based on tree type
+      switch (treeType) {
+        case 'avl':
+          showMessage(`Inserted ${numValue} into the AVL tree. Tree is automatically balanced.`);
+          break;
+        case 'heap':
+          showMessage(`Inserted ${numValue} into the max heap. New value bubbled up to maintain heap property.`);
+          break;
+        default:
+          showMessage(`Inserted ${numValue} into the BST.`);
+      }
       
       setTimeout(() => {
         setHighlightPath([]);
@@ -773,14 +798,25 @@ const TreesPage = () => {
     const animateDeletion = async () => {
       for (let i = 0; i < path.length; i++) {
         setHighlightPath([path[i]]);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, animationSpeed / 2));
       }
       
       // Create a new tree with the node deleted
       const newRoot = root ? { ...root } : null;
       const updatedRoot = deleteNode(numValue, newRoot);
       setRoot(updatedRoot);
-      showMessage(`Deleted ${numValue} from the tree`);
+      
+      // Show appropriate message based on tree type
+      switch (treeType) {
+        case 'avl':
+          showMessage(`Deleted ${numValue} from the AVL tree. Tree was rebalanced.`);
+          break;
+        case 'heap':
+          showMessage(`Deleted ${numValue} from the max heap. Heap property was restored.`);
+          break;
+        default:
+          showMessage(`Deleted ${numValue} from the BST.`);
+      }
       
       setTimeout(() => {
         setHighlightPath([]);
@@ -1044,11 +1080,55 @@ const TreesPage = () => {
 
   // Add effect to reset tree when tree type changes
   useEffect(() => {
-    setRoot(null);
     setTreeNodes([]);
     setTreeEdges([]);
     setHighlightPath([]);
     setTraversalResult(null);
+    
+    // Initialize appropriate tree structure based on tree type
+    let initialTree = null;
+    
+    if (treeType === 'bst') {
+      // Create a balanced BST
+      initialTree = new TreeNodeClass(50);
+      initialTree.left = new TreeNodeClass(30);
+      initialTree.right = new TreeNodeClass(70);
+      initialTree.left.left = new TreeNodeClass(20);
+      initialTree.left.right = new TreeNodeClass(40);
+      initialTree.right.left = new TreeNodeClass(60);
+      initialTree.right.right = new TreeNodeClass(80);
+    } 
+    else if (treeType === 'avl') {
+      // Create an AVL tree (already balanced)
+      initialTree = new TreeNodeClass(40);
+      initialTree.left = new TreeNodeClass(20);
+      initialTree.right = new TreeNodeClass(60);
+      initialTree.left.left = new TreeNodeClass(10);
+      initialTree.left.right = new TreeNodeClass(30);
+      initialTree.right.left = new TreeNodeClass(50);
+      initialTree.right.right = new TreeNodeClass(70);
+      
+      // Update heights for AVL properties
+      updateHeight(initialTree.left.left);
+      updateHeight(initialTree.left.right);
+      updateHeight(initialTree.right.left);
+      updateHeight(initialTree.right.right);
+      updateHeight(initialTree.left);
+      updateHeight(initialTree.right);
+      updateHeight(initialTree);
+    }
+    else if (treeType === 'heap') {
+      // Create a max-heap tree
+      initialTree = new TreeNodeClass(90);
+      initialTree.left = new TreeNodeClass(70);
+      initialTree.right = new TreeNodeClass(80);
+      initialTree.left.left = new TreeNodeClass(50);
+      initialTree.left.right = new TreeNodeClass(40);
+      initialTree.right.left = new TreeNodeClass(60);
+      initialTree.right.right = new TreeNodeClass(30);
+    }
+    
+    setRoot(initialTree);
   }, [treeType]);
 
   return (
@@ -1089,6 +1169,41 @@ const TreesPage = () => {
             <li>The tree edges will automatically adjust to follow the nodes</li>
             <li>Use the operations below to modify the tree structure</li>
           </ul>
+          
+          {treeType === 'bst' && (
+            <div>
+              <strong>Binary Search Tree Properties:</strong>
+              <ul>
+                <li>Left child is less than parent</li>
+                <li>Right child is greater than parent</li>
+                <li>Search operations are O(log n) on average, O(n) worst case</li>
+              </ul>
+            </div>
+          )}
+          
+          {treeType === 'avl' && (
+            <div>
+              <strong>AVL Tree Properties:</strong>
+              <ul>
+                <li>Self-balancing binary search tree</li>
+                <li>For any node, height difference between left and right subtrees is at most 1</li>
+                <li>Maintains O(log n) time complexity for all operations</li>
+                <li>Automatically rebalances after insertions and deletions</li>
+              </ul>
+            </div>
+          )}
+          
+          {treeType === 'heap' && (
+            <div>
+              <strong>Max Heap Properties:</strong>
+              <ul>
+                <li>Complete binary tree where parent is always greater than children</li>
+                <li>Root contains the maximum value</li>
+                <li>Insert and delete operations maintain the heap property</li>
+                <li>Used for priority queues and heap sort</li>
+              </ul>
+            </div>
+          )}
         </Instructions>
         
         <ControlsContainer>
