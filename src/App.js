@@ -17,8 +17,13 @@ import HeapsPage from './pages/dataStructures/HeapsPage';
 import BubbleSort from './pages/algorithms/BubbleSort';
 import SelectionSort from './pages/algorithms/SelectionSort';
 import InsertionSort from './pages/algorithms/InsertionSort';
+import MergeSort from './pages/algorithms/MergeSort';
+import QuickSort from './pages/algorithms/QuickSort';
+import HeapSort from './pages/algorithms/HeapSort';
 import BinarySearch from './pages/algorithms/BinarySearch';
 import LinearSearch from './pages/algorithms/LinearSearch';
+import BreadthFirstSearch from './pages/algorithms/BreadthFirstSearch';
+import DepthFirstSearch from './pages/algorithms/DepthFirstSearch';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -55,12 +60,17 @@ function App() {
             <Route path="/algorithms/sorting/bubble" element={<BubbleSort />} />
             <Route path="/algorithms/sorting/selection" element={<SelectionSort />} />
             <Route path="/algorithms/sorting/insertion" element={<InsertionSort />} />
+            <Route path="/algorithms/sorting/merge" element={<MergeSort />} />
+            <Route path="/algorithms/sorting/quick" element={<QuickSort />} />
+            <Route path="/algorithms/sorting/heap" element={<HeapSort />} />
             
             {/* Searching algorithms */}
             <Route path="/algorithms/searching/binary" element={<BinarySearch />} />
             <Route path="/algorithms/searching/linear" element={<LinearSearch />} />
             
-            {/* More routes will be added as we implement them */}
+            {/* Graph algorithms */}
+            <Route path="/algorithms/graph/bfs" element={<BreadthFirstSearch />} />
+            <Route path="/algorithms/graph/dfs" element={<DepthFirstSearch />} />
           </Routes>
         </MainContent>
       </AppContainer>

@@ -180,9 +180,9 @@ const AlgorithmsPage = () => {
             { id: 'bubble', title: 'Bubble Sort', comingSoon: false },
             { id: 'selection', title: 'Selection Sort', comingSoon: false },
             { id: 'insertion', title: 'Insertion Sort', comingSoon: false },
-            { id: 'merge', title: 'Merge Sort', comingSoon: true },
-            { id: 'quick', title: 'Quick Sort', comingSoon: true },
-            { id: 'heap', title: 'Heap Sort', comingSoon: true },
+            { id: 'merge', title: 'Merge Sort', comingSoon: false },
+            { id: 'quick', title: 'Quick Sort', comingSoon: false },
+            { id: 'heap', title: 'Heap Sort', comingSoon: false },
           ]
         },
         {
@@ -227,8 +227,8 @@ const AlgorithmsPage = () => {
           id: 'traversal',
           title: 'Graph Traversal',
           algorithms: [
-            { id: 'bfs', title: 'Breadth-First Search', comingSoon: true },
-            { id: 'dfs', title: 'Depth-First Search', comingSoon: true },
+            { id: 'bfs', title: 'Breadth-First Search', comingSoon: false },
+            { id: 'dfs', title: 'Depth-First Search', comingSoon: false },
           ]
         },
         {
