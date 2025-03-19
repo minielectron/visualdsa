@@ -71,7 +71,7 @@ const Edge = styled.div`
   position: absolute;
   background-color: ${props => props.highlight ? 'var(--primary)' : 'var(--primary-light)'};
   height: 3px;
-  transform-origin: left center;
+  transform-origin: 0 50%;
   z-index: 1;
 `;
 
@@ -322,6 +322,8 @@ const GraphsPage = () => {
         newGraph.addEdge(id, edge);
       });
     });
+    
+    // Add vertex at the clicked position (this will be the center of the vertex)
     newGraph.addVertex(newId, x, y);
     setGraph(newGraph);
     showMessage(`Added vertex ${newId}`);
@@ -523,6 +525,7 @@ const GraphsPage = () => {
             <li>Right-click on a vertex to delete it</li>
             <li>Right-click on an edge to delete it</li>
           </ul>
+          <p><strong>Vertex ID:</strong> Each node in the graph needs a unique identifier. You can provide a custom ID in the input field before adding a vertex, or leave it blank to get an automatically generated ID (e.g., V1, V2, etc.).</p>
         </Instructions>
         
         <ControlsContainer>
@@ -598,8 +601,8 @@ const GraphsPage = () => {
                   <Edge
                     highlight={isHighlighted}
                     style={{
-                      width: length - 40, // Adjust for node radius
-                      transform: `translate(${from.x + 20}px, ${from.y + 20}px) rotate(${angle}deg)`,
+                      width: length,
+                      transform: `translate(${from.x}px, ${from.y}px) rotate(${angle}deg)`,
                     }}
                     onContextMenu={(e) => {
                       e.preventDefault();
@@ -610,7 +613,7 @@ const GraphsPage = () => {
                   {graphType === 'directed' && (
                     <ArrowHead 
                       style={{
-                        transform: `translate(${to.x - 3 - 10 * Math.cos(angle * Math.PI / 180)}px, ${to.y - 10 * Math.sin(angle * Math.PI / 180)}px) rotate(${angle + 90}deg)`,
+                        transform: `translate(${to.x - 10 * Math.cos(angle * Math.PI / 180)}px, ${to.y - 10 * Math.sin(angle * Math.PI / 180)}px) rotate(${angle + 90}deg)`,
                       }}
                     />
                   )}
@@ -626,8 +629,8 @@ const GraphsPage = () => {
               highlight={highlightedVertices.includes(vertex.id)}
               selected={selectedVertex === vertex.id}
               style={{
-                left: vertex.x - 20,
-                top: vertex.y - 20,
+                left: `${vertex.x - 20}px`,
+                top: `${vertex.y - 20}px`,
               }}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}

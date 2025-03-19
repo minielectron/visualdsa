@@ -66,8 +66,7 @@ const TreeNode = styled(motion.div)`
   justify-content: center;
   align-items: center;
   font-weight: 600;
-  margin: 0 1rem;
-  position: relative;
+  position: absolute;
   z-index: 2;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 `;
@@ -85,7 +84,7 @@ const Edge = styled.div`
   position: absolute;
   background-color: var(--primary-light);
   height: 3px;
-  transform-origin: top left;
+  transform-origin: 0 50%;
   z-index: 1;
 `;
 
@@ -179,18 +178,6 @@ const OptionButton = styled.button`
   }
 `;
 
-const GraphContainer = styled.div`
-  width: 100%;
-  min-height: 500px;
-  margin: 2rem 0;
-  position: relative;
-  overflow-x: auto;
-  padding: 3rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
 class TreeNodeClass {
   constructor(value) {
     this.value = value;
@@ -209,9 +196,6 @@ const TreesPage = () => {
   const [highlightPath, setHighlightPath] = useState([]);
   const [traversalResult, setTraversalResult] = useState(null);
   const [treeType, setTreeType] = useState('bst'); // bst, avl, heap
-  const [viewMode, setViewMode] = useState('tree'); // tree, graph
-  const [selectedNode, setSelectedNode] = useState(null);
-  const [customEdges, setCustomEdges] = useState([]);
 
   // Define flattenTree with useCallback before it's used
   const flattenTree = useCallback((node, level = 0, position = 0, result = { nodes: [], connections: [] }) => {
@@ -222,15 +206,24 @@ const TreesPage = () => {
       result.nodes[level] = [];
     }
     
-    // Calculate horizontal spacing based on level
-    const spacing = Math.max(150, 300 / (level + 1));
+    // Calculate the width of the container
+    const containerWidth = 800;
     
-    // Calculate node position for balanced appearance
+    // Calculate the number of possible positions at this level (2^level)
+    const positionsAtLevel = Math.pow(2, level);
+    
+    // Calculate spacing between nodes at this level
+    const spacingBetweenNodes = containerWidth / (positionsAtLevel + 1);
+    
+    // Calculate x-coordinate (centered in the container)
+    const x = (position + 1) * spacingBetweenNodes;
+    
+    // Calculate node position for pyramid appearance
     const currentNode = {
       value: node.value,
       level,
       position,
-      x: position * spacing,
+      x: x,
     };
     
     result.nodes[level].push(currentNode);
@@ -575,106 +568,6 @@ const TreesPage = () => {
 
   const operationInfo = getOperationDescription();
 
-  // Function to convert tree to graph structure
-  const convertTreeToGraph = useCallback((treeRoot) => {
-    if (!treeRoot) return { nodes: [], edges: [] };
-    
-    const nodes = [];
-    const graphEdges = [];
-    
-    // BFS to visit all nodes
-    const queue = [{ node: treeRoot, id: 0 }];
-    let counter = 0;
-    
-    while (queue.length > 0) {
-      const { node, id } = queue.shift();
-      
-      // Random position for graph view
-      const angle = Math.random() * Math.PI * 2;
-      const distance = 120 + Math.random() * 80;
-      const x = 400 + Math.cos(angle) * distance;
-      const y = 250 + Math.sin(angle) * distance;
-      
-      nodes.push({
-        id,
-        value: node.value,
-        x,
-        y
-      });
-      
-      if (node.left) {
-        counter++;
-        queue.push({ node: node.left, id: counter });
-        graphEdges.push({ from: id, to: counter });
-      }
-      
-      if (node.right) {
-        counter++;
-        queue.push({ node: node.right, id: counter });
-        graphEdges.push({ from: id, to: counter });
-      }
-    }
-    
-    return { nodes, edges: graphEdges };
-  }, []);
-  
-  const [graphData, setGraphData] = useState({ nodes: [], edges: [] });
-  
-  // Update graph data whenever root changes
-  useEffect(() => {
-    if (root && viewMode === 'graph') {
-      setGraphData(convertTreeToGraph(root));
-    }
-  }, [root, viewMode, convertTreeToGraph]);
-
-  // Function to add a custom edge
-  const handleAddCustomEdge = (fromId, toId) => {
-    const newEdge = { from: fromId, to: toId };
-    
-    // Check if edge already exists
-    const edgeExists = customEdges.some(
-      edge => (edge.from === fromId && edge.to === toId) || 
-              (edge.from === toId && edge.to === fromId)
-    );
-    
-    if (!edgeExists) {
-      setCustomEdges([...customEdges, newEdge]);
-      showMessage(`Added custom edge from ${fromId} to ${toId}`);
-    } else {
-      showMessage('Edge already exists', 'error');
-    }
-    
-    setSelectedNode(null);
-  };
-
-  // Function to remove a custom edge
-  const handleRemoveCustomEdge = (fromId, toId) => {
-    setCustomEdges(
-      customEdges.filter(
-        edge => !(edge.from === fromId && edge.to === toId) && 
-               !(edge.from === toId && edge.to === fromId)
-      )
-    );
-    showMessage(`Removed edge between ${fromId} and ${toId}`);
-  };
-
-  // Function to clear all custom edges
-  const handleClearCustomEdges = () => {
-    setCustomEdges([]);
-    showMessage('Cleared all custom edges');
-  };
-
-  // Function to handle node click in graph view
-  const handleNodeClick = (nodeId) => {
-    if (selectedNode === null) {
-      setSelectedNode(nodeId);
-    } else if (selectedNode !== nodeId) {
-      handleAddCustomEdge(selectedNode, nodeId);
-    } else {
-      setSelectedNode(null);
-    }
-  };
-
   return (
     <PageContainer>
       <Header>
@@ -703,21 +596,6 @@ const TreesPage = () => {
             onClick={() => setTreeType('heap')}
           >
             Heap
-          </OptionButton>
-        </OptionsContainer>
-        
-        <OptionsContainer>
-          <OptionButton 
-            active={viewMode === 'tree'} 
-            onClick={() => setViewMode('tree')}
-          >
-            Tree View
-          </OptionButton>
-          <OptionButton 
-            active={viewMode === 'graph'} 
-            onClick={() => setViewMode('graph')}
-          >
-            Graph View
           </OptionButton>
         </OptionsContainer>
         
@@ -767,168 +645,68 @@ const TreesPage = () => {
           </TraversalResult>
         )}
         
-        {viewMode === 'tree' ? (
-          <TreeContainer>
-            <EdgeContainer>
-              {edges.map((edge, index) => {
-                // Find the actual nodes in the flattened tree
-                const fromLevel = flattenedTree[edge.from.level];
-                const toLevel = flattenedTree[edge.to.level];
-                
-                if (!fromLevel || !toLevel) return null;
-                
-                const fromNode = fromLevel.find(n => n.value === edge.from.value);
-                const toNode = toLevel.find(n => n.value === edge.to.value);
-                
-                if (!fromNode || !toNode) return null;
-                
-                // Get the center position of each node in the DOM
-                const fromX = fromNode.x + 25; // center of node (50px/2)
-                const fromY = edge.from.level * 100 + 25; // center of node
-                
-                const toX = toNode.x + 25; // center of node (50px/2)
-                const toY = edge.to.level * 100 + 25; // center of node
-                
-                // Calculate the length and angle of the line
-                const dx = toX - fromX;
-                const dy = toY - fromY;
-                const length = Math.sqrt(dx * dx + dy * dy);
-                const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-                
-                return (
-                  <Edge
-                    key={index}
-                    style={{
-                      width: length,
-                      transform: `translate(${fromX}px, ${fromY}px) rotate(${angle}deg)`,
-                      height: '3px', // thicker lines
-                    }}
-                  />
-                );
-              })}
-            </EdgeContainer>
-            
-            {flattenedTree.map((level, levelIndex) => (
-              <TreeLevel key={levelIndex} style={{ marginTop: levelIndex === 0 ? '0' : '2rem' }}>
-                {level.map((node, nodeIndex) => (
-                  <TreeNode
-                    key={nodeIndex}
-                    highlight={highlightPath.includes(node.value)}
-                    style={{
-                      position: 'absolute',
-                      left: `${node.x}px`,
-                    }}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {node.value}
-                  </TreeNode>
-                ))}
-              </TreeLevel>
-            ))}
-          </TreeContainer>
-        ) : (
-          <GraphContainer>
-            {/* Render standard tree edges */}
-            {graphData.edges.map((edge, index) => {
-              const fromNode = graphData.nodes.find(n => n.id === edge.from);
-              const toNode = graphData.nodes.find(n => n.id === edge.to);
+        <TreeContainer>
+          <EdgeContainer>
+            {edges.map((edge, index) => {
+              // Find the actual nodes in the flattened tree
+              const fromLevel = flattenedTree[edge.from.level];
+              const toLevel = flattenedTree[edge.to.level];
+              
+              if (!fromLevel || !toLevel) return null;
+              
+              const fromNode = fromLevel.find(n => n.value === edge.from.value);
+              const toNode = toLevel.find(n => n.value === edge.to.value);
               
               if (!fromNode || !toNode) return null;
               
-              const dx = toNode.x - fromNode.x;
-              const dy = toNode.y - fromNode.y;
+              // Calculate exact center positions
+              const fromX = fromNode.x;
+              const fromY = edge.from.level * 100 + 25; // Center Y of node
+              
+              const toX = toNode.x;
+              const toY = edge.to.level * 100 + 25; // Center Y of node
+              
+              // Calculate the length and angle of the line
+              const dx = toX - fromX;
+              const dy = toY - fromY;
               const length = Math.sqrt(dx * dx + dy * dy);
               const angle = Math.atan2(dy, dx) * 180 / Math.PI;
               
               return (
                 <Edge
-                  key={`tree-edge-${index}`}
+                  key={index}
                   style={{
-                    width: length - 40, // Adjust for node radius
-                    transform: `translate(${fromNode.x + 20}px, ${fromNode.y + 20}px) rotate(${angle}deg)`,
-                    backgroundColor: 'var(--primary-light)',
+                    width: length,
+                    transform: `translate(${fromX}px, ${fromY}px) rotate(${angle}deg)`,
+                    transformOrigin: '0 50%', // Set transform origin to left center
+                    height: '3px', // thicker lines
                   }}
                 />
               );
             })}
-            
-            {/* Render custom edges */}
-            {customEdges.map((edge, index) => {
-              const fromNode = graphData.nodes.find(n => n.id === edge.from);
-              const toNode = graphData.nodes.find(n => n.id === edge.to);
-              
-              if (!fromNode || !toNode) return null;
-              
-              const dx = toNode.x - fromNode.x;
-              const dy = toNode.y - fromNode.y;
-              const length = Math.sqrt(dx * dx + dy * dy);
-              const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-              
-              return (
-                <Edge
-                  key={`custom-edge-${index}`}
+          </EdgeContainer>
+          
+          {flattenedTree.map((level, levelIndex) => (
+            <TreeLevel key={levelIndex} style={{ marginTop: levelIndex === 0 ? '0' : '2rem' }}>
+              {level.map((node, nodeIndex) => (
+                <TreeNode
+                  key={nodeIndex}
+                  highlight={highlightPath.includes(node.value)}
                   style={{
-                    width: length - 40, // Adjust for node radius
-                    transform: `translate(${fromNode.x + 20}px, ${fromNode.y + 20}px) rotate(${angle}deg)`,
-                    backgroundColor: 'var(--secondary)',
+                    left: `${node.x - 25}px`, // Center the node (50px width / 2 = 25px)
+                    top: `${levelIndex * 100}px`, // Position node at its level
                   }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleRemoveCustomEdge(edge.from, edge.to);
-                  }}
-                />
-              );
-            })}
-            
-            {/* Render graph nodes */}
-            {graphData.nodes.map((node) => (
-              <TreeNode
-                key={node.id}
-                highlight={selectedNode === node.id || highlightPath.includes(node.value)}
-                style={{
-                  position: 'absolute',
-                  left: `${node.x - 25}px`,
-                  top: `${node.y - 25}px`,
-                  cursor: 'pointer',
-                  boxShadow: selectedNode === node.id ? '0 0 0 3px var(--secondary)' : undefined
-                }}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.3 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNodeClick(node.id);
-                }}
-              >
-                {node.value}
-              </TreeNode>
-            ))}
-          </GraphContainer>
-        )}
-        
-        {viewMode === 'graph' && (
-          <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-            <p style={{ marginBottom: '1rem' }}>
-              <strong>Graph Interaction:</strong> 
-              Click on a node to select it, then click another node to create a custom edge between them.
-              Right-click on an edge to remove it.
-            </p>
-            <OperationButton 
-              onClick={handleClearCustomEdges} 
-              variant="secondary"
-            >
-              Clear Custom Edges
-            </OperationButton>
-          </div>
-        )}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {node.value}
+                </TreeNode>
+              ))}
+            </TreeLevel>
+          ))}
+        </TreeContainer>
         
         {operationInfo && (
           <OperationDescription>
