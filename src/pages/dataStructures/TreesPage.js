@@ -219,6 +219,53 @@ const NodePosition = styled.span`
   line-height: 1;
 `;
 
+// Add a styled component for speed controls
+const SpeedControlContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem 0;
+`;
+
+const SpeedButton = styled.button`
+  padding: 0.5rem;
+  background: var(--primary-light);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background: var(--primary);
+  }
+`;
+
+const SpeedLabel = styled.span`
+  font-weight: 600;
+  min-width: 120px;
+  text-align: center;
+`;
+
+// Add a styled component for the traversal path
+const TraversalPath = styled.path`
+  stroke: #ff9800;
+  stroke-width: 4px;
+  stroke-dasharray: 8;
+  fill: none;
+  opacity: 0.8;
+  animation: dash 1s linear infinite;
+  
+  @keyframes dash {
+    to {
+      stroke-dashoffset: -16;
+    }
+  }
+`;
+
 class TreeNodeClass {
   constructor(value) {
     this.value = value;
@@ -240,6 +287,8 @@ const TreesPage = () => {
   const [draggedNode, setDraggedNode] = useState(null);
   const [containerBounds, setContainerBounds] = useState({ width: 0, height: 0 });
   const containerRef = useRef(null);
+  const [animationSpeed, setAnimationSpeed] = useState(700); // Default animation speed in ms
+  const [traversalPath, setTraversalPath] = useState([]); // Store traversal path for visualization
 
   // Function to position nodes in a tree layout
   const positionTreeNodes = useCallback((root) => {
@@ -711,20 +760,47 @@ const TreesPage = () => {
     setDraggedNode(null);
   };
 
-  // Add a function to animate traversals
+  // Add function to decrease animation speed (increase delay time)
+  const decreaseSpeed = () => {
+    setAnimationSpeed(prev => Math.min(prev + 200, 1500));
+  };
+
+  // Add function to increase animation speed (decrease delay time)
+  const increaseSpeed = () => {
+    setAnimationSpeed(prev => Math.max(prev - 200, 100));
+  };
+
+  // Update traversal animation function to use animation speed and show path
   const animateTraversal = async (nodeValues) => {
-    // Clear any existing highlights
+    // Clear any existing highlights and path
     setHighlightPath([]);
+    setTraversalPath([]);
+    
+    // Keep track of visited nodes for path visualization
+    const visited = [];
     
     // Animate each node in sequence
     for (let i = 0; i < nodeValues.length; i++) {
-      setHighlightPath([nodeValues[i]]);
-      await new Promise(resolve => setTimeout(resolve, 700)); // Delay between each step
+      const currentNode = nodeValues[i];
+      setHighlightPath([currentNode]);
+      
+      // Find this node in the tree nodes
+      const nodeObj = treeNodes.find(n => n.value === currentNode);
+      if (nodeObj) {
+        visited.push(nodeObj);
+        setTraversalPath([...visited]); // Update path with all visited nodes
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, animationSpeed)); // Use the animation speed
     }
     
     // Clear highlights after animation is complete
     setTimeout(() => {
       setHighlightPath([]);
+      // Keep the path visible for a bit longer
+      setTimeout(() => {
+        setTraversalPath([]);
+      }, 1000);
     }, 500);
   };
 
@@ -796,6 +872,19 @@ const TreesPage = () => {
           <OperationButton onClick={handlePostOrder}>Post-Order</OperationButton>
         </ControlsContainer>
         
+        <SpeedControlContainer>
+          <SpeedButton onClick={decreaseSpeed}>
+            <span role="img" aria-label="Decrease Speed">🐢</span>
+          </SpeedButton>
+          <SpeedLabel>Animation Speed: {animationSpeed === 100 ? 'Very Fast' : 
+                                          animationSpeed <= 300 ? 'Fast' : 
+                                          animationSpeed <= 700 ? 'Normal' : 
+                                          animationSpeed <= 1100 ? 'Slow' : 'Very Slow'}</SpeedLabel>
+          <SpeedButton onClick={increaseSpeed}>
+            <span role="img" aria-label="Increase Speed">🐇</span>
+          </SpeedButton>
+        </SpeedControlContainer>
+        
         <AnimatePresence>
           {message && (
             <MessageContainer 
@@ -822,6 +911,18 @@ const TreesPage = () => {
         
         <TreeContainer ref={containerRef}>
           <EdgeContainer>
+            {/* Render traversal path if it exists */}
+            {traversalPath.length > 1 && (
+              <TraversalPath 
+                d={traversalPath.map((node, i) => {
+                  // Calculate center of the node
+                  const x = node.x + 25;
+                  const y = node.y + 25;
+                  return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                }).join(' ')}
+              />
+            )}
+          
             {treeEdges.map((edge, index) => {
               const fromNode = treeNodes.find(n => n.id === edge.from);
               const toNode = treeNodes.find(n => n.id === edge.to);
@@ -887,13 +988,8 @@ const TreesPage = () => {
               data-level={node.level}
               data-direction={node.direction || 'root'}
             >
-              <NodeContent type={node.direction}>
+              <NodeContent>
                 {node.value}
-                {node.direction && (
-                  <NodePosition type={node.direction}>
-                    {node.direction === 'left' ? 'L' : 'R'}
-                  </NodePosition>
-                )}
               </NodeContent>
             </TreeNode>
           ))}

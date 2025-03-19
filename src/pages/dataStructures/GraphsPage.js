@@ -214,6 +214,7 @@ class Graph {
     for (const [vertexId, edges] of this.edges) {
       if (edges.has(id)) {
         edges.delete(id);
+        console.debug(`Removed connection from ${vertexId} to ${id}`);
       }
     }
     this.edges.delete(id);
