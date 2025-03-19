@@ -46,6 +46,28 @@ const GraphContainer = styled.div`
   overflow: hidden;
 `;
 
+const EdgeContainer = styled.svg`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+`;
+
+const Edge = styled.path`
+  stroke: ${props => props.highlight ? 'var(--primary)' : 'var(--primary-light)'};
+  stroke-width: 3px;
+  fill: none;
+  pointer-events: all;
+  cursor: pointer;
+`;
+
+const ArrowMarker = styled.marker`
+  fill: var(--primary-light);
+`;
+
 const Vertex = styled(motion.div)`
   width: 40px;
   height: 40px;
@@ -65,25 +87,6 @@ const Vertex = styled(motion.div)`
   &:hover {
     transform: scale(1.1);
   }
-`;
-
-const Edge = styled.div`
-  position: absolute;
-  background-color: ${props => props.highlight ? 'var(--primary)' : 'var(--primary-light)'};
-  height: 3px;
-  transform-origin: 0 50%;
-  z-index: 1;
-`;
-
-const ArrowHead = styled.div`
-  position: absolute;
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-bottom: 10px solid var(--primary-light);
-  transform-origin: center bottom;
-  z-index: 1;
 `;
 
 const Instructions = styled.div`
@@ -577,50 +580,53 @@ const GraphsPage = () => {
         )}
         
         <GraphContainer onClick={handleAddVertex}>
-          {/* Render edges */}
-          {Array.from(graph.vertices.entries()).flatMap(([fromId, from]) => {
-            const edges = graph.edges.get(fromId);
-            if (!edges) return [];
+          <EdgeContainer>
+            <defs>
+              <ArrowMarker 
+                id="arrowhead" 
+                markerWidth="10" 
+                markerHeight="7" 
+                refX="9" 
+                refY="3.5" 
+                orient="auto"
+              >
+                <polygon points="0 0, 10 3.5, 0 7" />
+              </ArrowMarker>
+            </defs>
             
-            return Array.from(edges).map(toId => {
-              // For undirected graphs, only render each edge once
-              if (graphType === 'undirected' && fromId > toId) return null;
+            {/* Render edges */}
+            {Array.from(graph.vertices.entries()).flatMap(([fromId, from]) => {
+              const edges = graph.edges.get(fromId);
+              if (!edges) return [];
               
-              const to = graph.vertices.get(toId);
-              if (!to) return null;
-              
-              const dx = to.x - from.x;
-              const dy = to.y - from.y;
-              const length = Math.sqrt(dx * dx + dy * dy);
-              const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-              
-              const isHighlighted = highlightedEdges.includes(`${fromId}-${toId}`);
-              
-              return (
-                <React.Fragment key={`${fromId}-${toId}`}>
+              return Array.from(edges).map(toId => {
+                // For undirected graphs, only render each edge once
+                if (graphType === 'undirected' && fromId > toId) return null;
+                
+                const to = graph.vertices.get(toId);
+                if (!to) return null;
+                
+                const isHighlighted = highlightedEdges.includes(`${fromId}-${toId}`);
+                
+                // Create an SVG path for the edge
+                const pathData = `M ${from.x} ${from.y} L ${to.x} ${to.y}`;
+                
+                return (
                   <Edge
+                    key={`${fromId}-${toId}`}
+                    d={pathData}
                     highlight={isHighlighted}
-                    style={{
-                      width: length,
-                      transform: `translate(${from.x}px, ${from.y}px) rotate(${angle}deg)`,
-                    }}
+                    markerEnd={graphType === 'directed' ? 'url(#arrowhead)' : ''}
                     onContextMenu={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       handleRemoveEdge(fromId, toId);
                     }}
                   />
-                  {graphType === 'directed' && (
-                    <ArrowHead 
-                      style={{
-                        transform: `translate(${to.x - 10 * Math.cos(angle * Math.PI / 180)}px, ${to.y - 10 * Math.sin(angle * Math.PI / 180)}px) rotate(${angle + 90}deg)`,
-                      }}
-                    />
-                  )}
-                </React.Fragment>
-              );
-            }).filter(Boolean);
-          })}
+                );
+              }).filter(Boolean);
+            })}
+          </EdgeContainer>
           
           {/* Render vertices */}
           {Array.from(graph.vertices.values()).map(vertex => (

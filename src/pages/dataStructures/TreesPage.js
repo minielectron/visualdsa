@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -40,11 +40,14 @@ const TreeContainer = styled.div`
   min-height: 500px;
   margin: 2rem 0;
   position: relative;
-  overflow-x: auto;
+  overflow: visible;
   padding: 3rem;
   display: flex;
   flex-direction: column;
   align-items: center;
+  border: 2px solid var(--primary-light);
+  border-radius: var(--border-radius);
+  background: #f9f9f9;
 `;
 
 const TreeLevel = styled.div`
@@ -69,23 +72,24 @@ const TreeNode = styled(motion.div)`
   position: absolute;
   z-index: 2;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  cursor: move;
+  user-select: none;
 `;
 
-const EdgeContainer = styled.div`
+const EdgeContainer = styled.svg`
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
+  z-index: 1;
 `;
 
-const Edge = styled.div`
-  position: absolute;
-  background-color: var(--primary-light);
-  height: 3px;
-  transform-origin: 0 50%;
-  z-index: 1;
+const Edge = styled.path`
+  stroke: var(--primary-light);
+  stroke-width: 3px;
+  fill: none;
 `;
 
 const ControlsContainer = styled.div`
@@ -178,6 +182,14 @@ const OptionButton = styled.button`
   }
 `;
 
+const Instructions = styled.div`
+  margin: 1rem 0;
+  padding: 1rem;
+  background: #f5f9ff;
+  border-radius: var(--border-radius);
+  border-left: 4px solid var(--primary);
+`;
+
 class TreeNodeClass {
   constructor(value) {
     this.value = value;
@@ -188,71 +200,75 @@ class TreeNodeClass {
 
 const TreesPage = () => {
   const [root, setRoot] = useState(null);
-  const [flattenedTree, setFlattenedTree] = useState([]);
-  const [edges, setEdges] = useState([]);
+  const [treeNodes, setTreeNodes] = useState([]);
+  const [treeEdges, setTreeEdges] = useState([]);
   const [value, setValue] = useState('');
   const [message, setMessage] = useState(null);
   const [operation, setOperation] = useState(null);
   const [highlightPath, setHighlightPath] = useState([]);
   const [traversalResult, setTraversalResult] = useState(null);
   const [treeType, setTreeType] = useState('bst'); // bst, avl, heap
+  const [draggedNode, setDraggedNode] = useState(null);
+  const containerRef = useRef(null);
 
-  // Define flattenTree with useCallback before it's used
-  const flattenTree = useCallback((node, level = 0, position = 0, result = { nodes: [], connections: [] }) => {
-    if (!node) return result;
+  // Function to position nodes in a tree layout
+  const positionTreeNodes = useCallback((root) => {
+    if (!root) return { nodes: [], edges: [] };
     
-    // Add node to the correct level
-    if (!result.nodes[level]) {
-      result.nodes[level] = [];
-    }
+    const nodes = [];
+    const edges = [];
+    const levelWidth = 180;
+    const levelHeight = 100;
     
-    // Calculate the width of the container
-    const containerWidth = 800;
-    
-    // Calculate the number of possible positions at this level (2^level)
-    const positionsAtLevel = Math.pow(2, level);
-    
-    // Calculate spacing between nodes at this level
-    const spacingBetweenNodes = containerWidth / (positionsAtLevel + 1);
-    
-    // Calculate x-coordinate (centered in the container)
-    const x = (position + 1) * spacingBetweenNodes;
-    
-    // Calculate node position for pyramid appearance
-    const currentNode = {
-      value: node.value,
-      level,
-      position,
-      x: x,
+    // Traverse the tree to assign positions
+    const traverse = (node, level, position, parentId = null) => {
+      if (!node) return;
+      
+      // Calculate horizontal position based on level and position
+      const x = position * levelWidth;
+      const y = level * levelHeight;
+      
+      const nodeId = nodes.length;
+      nodes.push({
+        id: nodeId,
+        value: node.value,
+        x: x,
+        y: y,
+        level,
+        position
+      });
+      
+      if (parentId !== null) {
+        edges.push({
+          from: parentId,
+          to: nodeId
+        });
+      }
+      
+      // Calculate child positions (wider spacing at deeper levels)
+      if (node.left) {
+        traverse(node.left, level + 1, position - 1 / (level + 1), nodeId);
+      }
+      
+      if (node.right) {
+        traverse(node.right, level + 1, position + 1 / (level + 1), nodeId);
+      }
     };
     
-    result.nodes[level].push(currentNode);
+    traverse(root, 0, 0);
     
-    // Process left child
-    if (node.left) {
-      // Add connection to left child
-      result.connections.push({
-        from: { level, position, value: node.value },
-        to: { level: level + 1, position: position * 2, value: node.left.value },
-        direction: 'left'
-      });
+    // Center nodes horizontally
+    if (nodes.length > 0) {
+      const minX = Math.min(...nodes.map(n => n.x));
+      const containerWidth = containerRef.current ? containerRef.current.offsetWidth : 800;
+      const offsetX = (containerWidth / 2) - minX - levelWidth / 2;
       
-      flattenTree(node.left, level + 1, position * 2, result);
+      nodes.forEach(node => {
+        node.x += offsetX;
+      });
     }
     
-    // Process right child
-    if (node.right) {
-      // Add connection to right child
-      result.connections.push({
-        from: { level, position, value: node.value },
-        to: { level: level + 1, position: position * 2 + 1, value: node.right.value },
-        direction: 'right'
-      });
-      
-      flattenTree(node.right, level + 1, position * 2 + 1, result);
-    }
-    
-    return result;
+    return { nodes, edges };
   }, []);
 
   // Initialize a sample tree when the component mounts
@@ -268,14 +284,14 @@ const TreesPage = () => {
     setRoot(initialTree);
   }, []);
 
-  // Update the flattened tree representation whenever the root changes
+  // Update the tree layout whenever the root changes
   useEffect(() => {
-    if (root) {
-      const { nodes, connections } = flattenTree(root);
-      setFlattenedTree(nodes);
-      setEdges(connections);
+    if (root && containerRef.current) {
+      const { nodes, edges } = positionTreeNodes(root);
+      setTreeNodes(nodes);
+      setTreeEdges(edges);
     }
-  }, [root, flattenTree]);
+  }, [root, positionTreeNodes, containerRef]);
 
   const showMessage = (text, type = 'success') => {
     setMessage({ text, type });
@@ -522,8 +538,8 @@ const TreesPage = () => {
 
   const handleClearTree = () => {
     setRoot(null);
-    setFlattenedTree([]);
-    setEdges([]);
+    setTreeNodes([]);
+    setTreeEdges([]);
     setHighlightPath([]);
     setTraversalResult(null);
     showMessage('Tree cleared');
@@ -566,6 +582,26 @@ const TreesPage = () => {
     }
   };
 
+  const handleNodeDragStart = (nodeId) => {
+    setDraggedNode(nodeId);
+  };
+
+  const handleNodeDrag = (e, nodeId) => {
+    if (draggedNode === nodeId) {
+      const newNodes = [...treeNodes];
+      const node = newNodes.find(n => n.id === nodeId);
+      if (node) {
+        node.x += e.movementX;
+        node.y += e.movementY;
+        setTreeNodes(newNodes);
+      }
+    }
+  };
+
+  const handleNodeDragEnd = () => {
+    setDraggedNode(null);
+  };
+
   const operationInfo = getOperationDescription();
 
   return (
@@ -598,6 +634,15 @@ const TreesPage = () => {
             Heap
           </OptionButton>
         </OptionsContainer>
+        
+        <Instructions>
+          <strong>Interactive Tree:</strong>
+          <ul>
+            <li>Drag any node to reposition it</li>
+            <li>The tree edges will automatically adjust to follow the nodes</li>
+            <li>Use the operations below to modify the tree structure</li>
+          </ul>
+        </Instructions>
         
         <ControlsContainer>
           <div>
@@ -645,66 +690,50 @@ const TreesPage = () => {
           </TraversalResult>
         )}
         
-        <TreeContainer>
+        <TreeContainer ref={containerRef}>
           <EdgeContainer>
-            {edges.map((edge, index) => {
-              // Find the actual nodes in the flattened tree
-              const fromLevel = flattenedTree[edge.from.level];
-              const toLevel = flattenedTree[edge.to.level];
-              
-              if (!fromLevel || !toLevel) return null;
-              
-              const fromNode = fromLevel.find(n => n.value === edge.from.value);
-              const toNode = toLevel.find(n => n.value === edge.to.value);
+            {treeEdges.map((edge, index) => {
+              const fromNode = treeNodes.find(n => n.id === edge.from);
+              const toNode = treeNodes.find(n => n.id === edge.to);
               
               if (!fromNode || !toNode) return null;
               
-              // Calculate exact center positions
-              const fromX = fromNode.x;
-              const fromY = edge.from.level * 100 + 25; // Center Y of node
+              // Create path from center of one node to center of another
+              const fromX = fromNode.x + 25; // center of node
+              const fromY = fromNode.y + 25;
+              const toX = toNode.x + 25;
+              const toY = toNode.y + 25;
               
-              const toX = toNode.x;
-              const toY = edge.to.level * 100 + 25; // Center Y of node
-              
-              // Calculate the length and angle of the line
-              const dx = toX - fromX;
-              const dy = toY - fromY;
-              const length = Math.sqrt(dx * dx + dy * dy);
-              const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+              const pathData = `M ${fromX} ${fromY} L ${toX} ${toY}`;
               
               return (
                 <Edge
                   key={index}
-                  style={{
-                    width: length,
-                    transform: `translate(${fromX}px, ${fromY}px) rotate(${angle}deg)`,
-                    transformOrigin: '0 50%', // Set transform origin to left center
-                    height: '3px', // thicker lines
-                  }}
+                  d={pathData}
                 />
               );
             })}
           </EdgeContainer>
           
-          {flattenedTree.map((level, levelIndex) => (
-            <TreeLevel key={levelIndex} style={{ marginTop: levelIndex === 0 ? '0' : '2rem' }}>
-              {level.map((node, nodeIndex) => (
-                <TreeNode
-                  key={nodeIndex}
-                  highlight={highlightPath.includes(node.value)}
-                  style={{
-                    left: `${node.x - 25}px`, // Center the node (50px width / 2 = 25px)
-                    top: `${levelIndex * 100}px`, // Position node at its level
-                  }}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {node.value}
-                </TreeNode>
-              ))}
-            </TreeLevel>
+          {treeNodes.map((node) => (
+            <TreeNode
+              key={node.id}
+              highlight={highlightPath.includes(node.value)}
+              style={{
+                left: `${node.x}px`,
+                top: `${node.y}px`
+              }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.3 }}
+              onMouseDown={() => handleNodeDragStart(node.id)}
+              onMouseMove={(e) => handleNodeDrag(e, node.id)}
+              onMouseUp={handleNodeDragEnd}
+              onMouseLeave={handleNodeDragEnd}
+            >
+              {node.value}
+            </TreeNode>
           ))}
         </TreeContainer>
         
