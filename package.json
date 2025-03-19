@@ -2,7 +2,7 @@
   "name": "dsa-demos",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://minielectron.github.io/visualdsa",
+  "homepage": "https://minielectron.github.io/visualdsa/",
   "dependencies": {
     "framer-motion": "^12.5.0",
     "react": "^19.0.0",
