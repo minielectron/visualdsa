@@ -25,6 +25,8 @@ const CenterNode = styled(motion.div)`
   font-size: 1rem;
   box-shadow: 0 4px 15px rgba(98, 0, 238, 0.3);
   cursor: pointer;
+  z-index: 3;
+  position: relative;
 `;
 
 const DataStructureNode = styled(motion.div)`
@@ -54,8 +56,10 @@ const ConnectionLine = styled(motion.div)`
   position: absolute;
   height: 2px;
   background: var(--primary-light);
-  transform-origin: left center;
+  transform-origin: center left;
   z-index: 1;
+  left: 50%;
+  top: 50%;
 `;
 
 const InfoPanel = styled(motion.div)`
