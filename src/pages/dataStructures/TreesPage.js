@@ -271,8 +271,84 @@ class TreeNodeClass {
     this.value = value;
     this.left = null;
     this.right = null;
+    this.height = 1; // For AVL trees
+    this.balanceFactor = 0; // For AVL trees
   }
 }
+
+// Utility functions that don't depend on root
+const getHeight = (node) => {
+  return node ? node.height : 0;
+};
+
+const getBalanceFactor = (node) => {
+  return node ? getHeight(node.left) - getHeight(node.right) : 0;
+};
+
+const updateHeight = (node) => {
+  if (node) {
+    node.height = Math.max(getHeight(node.left), getHeight(node.right)) + 1;
+    node.balanceFactor = getBalanceFactor(node);
+  }
+};
+
+const rotateRight = (y) => {
+  const x = y.left;
+  const T2 = x.right;
+
+  x.right = y;
+  y.left = T2;
+
+  updateHeight(y);
+  updateHeight(x);
+
+  return x;
+};
+
+const rotateLeft = (x) => {
+  const y = x.right;
+  const T2 = y.left;
+
+  y.left = x;
+  x.right = T2;
+
+  updateHeight(x);
+  updateHeight(y);
+
+  return y;
+};
+
+// Heap helpers that don't depend on root
+const getParentIndex = (index) => Math.floor((index - 1) / 2);
+const getLeftChildIndex = (index) => 2 * index + 1;
+const getRightChildIndex = (index) => 2 * index + 2;
+
+const heapifyUp = (array, index) => {
+  const parentIndex = getParentIndex(index);
+  if (parentIndex >= 0 && array[parentIndex].value < array[index].value) {
+    [array[parentIndex], array[index]] = [array[index], array[parentIndex]];
+    heapifyUp(array, parentIndex);
+  }
+};
+
+const heapifyDown = (array, index) => {
+  const leftChildIndex = getLeftChildIndex(index);
+  const rightChildIndex = getRightChildIndex(index);
+  let largestIndex = index;
+
+  if (leftChildIndex < array.length && array[leftChildIndex].value > array[largestIndex].value) {
+    largestIndex = leftChildIndex;
+  }
+
+  if (rightChildIndex < array.length && array[rightChildIndex].value > array[largestIndex].value) {
+    largestIndex = rightChildIndex;
+  }
+
+  if (largestIndex !== index) {
+    [array[index], array[largestIndex]] = [array[largestIndex], array[index]];
+    heapifyDown(array, largestIndex);
+  }
+};
 
 const TreesPage = () => {
   const [root, setRoot] = useState(null);
@@ -289,6 +365,159 @@ const TreesPage = () => {
   const containerRef = useRef(null);
   const [animationSpeed, setAnimationSpeed] = useState(700); // Default animation speed in ms
   const [traversalPath, setTraversalPath] = useState([]); // Store traversal path for visualization
+
+  // Helper functions for heap operations moved inside component
+  const treeToArray = (node) => {
+    if (!node) return [];
+    const array = [node];
+    const queue = [node];
+    
+    while (queue.length > 0) {
+      const current = queue.shift();
+      if (current.left) {
+        array.push(current.left);
+        queue.push(current.left);
+      }
+      if (current.right) {
+        array.push(current.right);
+        queue.push(current.right);
+      }
+    }
+    return array;
+  };
+
+  const arrayToTree = (array) => {
+    if (array.length === 0) return null;
+    
+    for (let i = 0; i < array.length; i++) {
+      const leftIndex = getLeftChildIndex(i);
+      const rightIndex = getRightChildIndex(i);
+      
+      array[i].left = leftIndex < array.length ? array[leftIndex] : null;
+      array[i].right = rightIndex < array.length ? array[rightIndex] : null;
+    }
+    
+    return array[0];
+  };
+
+  // Functions that depend on root, now defined inside component
+  const findMinValue = (node) => {
+    let minValue = node.value;
+    while (node.left !== null) {
+      minValue = node.left.value;
+      node = node.left;
+    }
+    return minValue;
+  };
+  
+  const insertAVL = (value, node) => {
+    if (node === null) {
+      return new TreeNodeClass(value);
+    }
+
+    if (value < node.value) {
+      node.left = insertAVL(value, node.left);
+    } else if (value > node.value) {
+      node.right = insertAVL(value, node.right);
+    } else {
+      return node; // Duplicate values not allowed
+    }
+
+    updateHeight(node);
+    const balance = getBalanceFactor(node);
+
+    // Left Left Case
+    if (balance > 1 && value < node.left.value) {
+      return rotateRight(node);
+    }
+
+    // Right Right Case
+    if (balance < -1 && value > node.right.value) {
+      return rotateLeft(node);
+    }
+
+    // Left Right Case
+    if (balance > 1 && value > node.left.value) {
+      node.left = rotateLeft(node.left);
+      return rotateRight(node);
+    }
+
+    // Right Left Case
+    if (balance < -1 && value < node.right.value) {
+      node.right = rotateRight(node.right);
+      return rotateLeft(node);
+    }
+
+    return node;
+  };
+
+  const deleteAVL = (value, node) => {
+    if (node === null) return null;
+
+    if (value < node.value) {
+      node.left = deleteAVL(value, node.left);
+    } else if (value > node.value) {
+      node.right = deleteAVL(value, node.right);
+    } else {
+      // Node with only one child or no child
+      if (node.left === null) {
+        return node.right;
+      } else if (node.right === null) {
+        return node.left;
+      }
+
+      // Node with two children
+      node.value = findMinValue(node.right);
+      node.right = deleteAVL(node.value, node.right);
+    }
+
+    updateHeight(node);
+    const balance = getBalanceFactor(node);
+
+    // Left Left Case
+    if (balance > 1 && getBalanceFactor(node.left) >= 0) {
+      return rotateRight(node);
+    }
+
+    // Left Right Case
+    if (balance > 1 && getBalanceFactor(node.left) < 0) {
+      node.left = rotateLeft(node.left);
+      return rotateRight(node);
+    }
+
+    // Right Right Case
+    if (balance < -1 && getBalanceFactor(node.right) <= 0) {
+      return rotateLeft(node);
+    }
+
+    // Right Left Case
+    if (balance < -1 && getBalanceFactor(node.right) > 0) {
+      node.right = rotateRight(node.right);
+      return rotateLeft(node);
+    }
+
+    return node;
+  };
+
+  const insertHeap = (value, node) => {
+    const newNode = new TreeNodeClass(value);
+    const array = treeToArray(node);
+    array.push(newNode);
+    heapifyUp(array, array.length - 1);
+    return arrayToTree(array);
+  };
+
+  const deleteHeap = (value, node) => {
+    const array = treeToArray(node);
+    const index = array.findIndex(n => n.value === value);
+    if (index === -1) return node;
+
+    // Swap with last element
+    [array[index], array[array.length - 1]] = [array[array.length - 1], array[index]];
+    array.pop();
+    heapifyDown(array, index);
+    return arrayToTree(array);
+  };
 
   // Function to position nodes in a tree layout
   const positionTreeNodes = useCallback((root) => {
@@ -406,52 +635,55 @@ const TreesPage = () => {
     }, 3000);
   };
 
+  // Update the insertNode function to handle different tree types
   const insertNode = (value, node = root) => {
-    if (node === null) {
-      return new TreeNodeClass(value);
+    switch (treeType) {
+      case 'avl':
+        return insertAVL(value, node);
+      case 'heap':
+        return insertHeap(value, node);
+      default:
+        if (node === null) {
+          return new TreeNodeClass(value);
+        }
+        
+        if (value < node.value) {
+          node.left = insertNode(value, node.left);
+        } else if (value > node.value) {
+          node.right = insertNode(value, node.right);
+        }
+        
+        return node;
     }
-    
-    if (value < node.value) {
-      node.left = insertNode(value, node.left);
-    } else if (value > node.value) {
-      node.right = insertNode(value, node.right);
-    }
-    
-    return node;
   };
 
+  // Update the deleteNode function to handle different tree types
   const deleteNode = (value, node = root) => {
-    if (node === null) return null;
-    
-    if (value < node.value) {
-      node.left = deleteNode(value, node.left);
-    } else if (value > node.value) {
-      node.right = deleteNode(value, node.right);
-    } else {
-      // Node with only one child or no child
-      if (node.left === null) {
-        return node.right;
-      } else if (node.right === null) {
-        return node.left;
-      }
-      
-      // Node with two children: Get the inorder successor (smallest in the right subtree)
-      node.value = findMinValue(node.right);
-      
-      // Delete the inorder successor
-      node.right = deleteNode(node.value, node.right);
+    switch (treeType) {
+      case 'avl':
+        return deleteAVL(value, node);
+      case 'heap':
+        return deleteHeap(value, node);
+      default:
+        if (node === null) return null;
+        
+        if (value < node.value) {
+          node.left = deleteNode(value, node.left);
+        } else if (value > node.value) {
+          node.right = deleteNode(value, node.right);
+        } else {
+          if (node.left === null) {
+            return node.right;
+          } else if (node.right === null) {
+            return node.left;
+          }
+          
+          node.value = findMinValue(node.right);
+          node.right = deleteNode(node.value, node.right);
+        }
+        
+        return node;
     }
-    
-    return node;
-  };
-
-  const findMinValue = (node) => {
-    let minValue = node.value;
-    while (node.left !== null) {
-      minValue = node.left.value;
-      node = node.left;
-    }
-    return minValue;
   };
 
   const searchNode = (value, node = root, path = []) => {
@@ -809,6 +1041,15 @@ const TreesPage = () => {
   };
 
   const operationInfo = getOperationDescription();
+
+  // Add effect to reset tree when tree type changes
+  useEffect(() => {
+    setRoot(null);
+    setTreeNodes([]);
+    setTreeEdges([]);
+    setHighlightPath([]);
+    setTraversalResult(null);
+  }, [treeType]);
 
   return (
     <PageContainer>
