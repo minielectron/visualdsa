@@ -37,11 +37,11 @@ const VisualizationContainer = styled.div`
 
 const TreeContainer = styled.div`
   width: 100%;
-  min-height: 500px;
+  min-height: 600px;
   margin: 2rem 0;
   position: relative;
   overflow: visible;
-  padding: 3rem;
+  padding: 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -65,6 +65,7 @@ const TreeNode = styled(motion.div)`
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   cursor: move;
   user-select: none;
+  transform: translate(0, 0) !important;
 `;
 
 const EdgeContainer = styled.svg`
@@ -75,6 +76,7 @@ const EdgeContainer = styled.svg`
   height: 100%;
   pointer-events: none;
   z-index: 1;
+  overflow: visible;
 `;
 
 const Edge = styled.path`
@@ -181,6 +183,42 @@ const Instructions = styled.div`
   border-left: 4px solid var(--primary);
 `;
 
+// Add a styled component for the edge direction labels
+const DirectionLabel = styled.text`
+  fill: ${props => props.type === 'left' ? '#2196F3' : '#FF5722'};
+  font-size: 12px;
+  font-weight: bold;
+  pointer-events: none;
+  user-select: none;
+`;
+
+// Add a styled component for the node content to hold both value and direction indicators
+const NodeContent = styled.div`
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+`;
+
+// Add a styled component for the position indicator (L/R)
+const NodePosition = styled.span`
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 14px;
+  height: 14px;
+  font-size: 9px;
+  background: ${props => props.type === 'left' ? '#2196F3' : '#FF5722'};
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  line-height: 1;
+`;
+
 class TreeNodeClass {
   constructor(value) {
     this.value = value;
@@ -223,8 +261,8 @@ const TreesPage = () => {
     const containerWidth = containerRef.current ? containerRef.current.offsetWidth : 800;
     const nodeSpacing = Math.min(100, containerWidth / (Math.pow(2, treeDepth - 1) + 1));
     
-    // Traverse the tree to assign positions using improved algorithm
-    const assignPositions = (node, level, position, parentId = null) => {
+    // Traverse the tree to assign positions
+    const assignPositions = (node, level, position, parentId = null, direction = null) => {
       if (!node) return;
       
       // Each level gets wider as we go deeper
@@ -242,23 +280,26 @@ const TreesPage = () => {
         x: x,
         y: y,
         level,
-        position
+        position,
+        direction
       });
       
       if (parentId !== null) {
         edges.push({
           from: parentId,
-          to: nodeId
+          to: nodeId,
+          direction
         });
       }
       
-      // Calculate positions for children
+      // Left children are at position 2*position
       if (node.left) {
-        assignPositions(node.left, level + 1, position * 2, nodeId);
+        assignPositions(node.left, level + 1, position * 2, nodeId, 'left');
       }
       
+      // Right children are at position 2*position + 1
       if (node.right) {
-        assignPositions(node.right, level + 1, position * 2 + 1, nodeId);
+        assignPositions(node.right, level + 1, position * 2 + 1, nodeId, 'right');
       }
     };
     
@@ -538,18 +579,27 @@ const TreesPage = () => {
     setOperation('traversal');
     const result = inOrderTraversal();
     setTraversalResult({ type: 'In-Order', values: result });
+    
+    // Animate the traversal
+    animateTraversal(result);
   };
 
   const handlePreOrder = () => {
     setOperation('traversal');
     const result = preOrderTraversal();
     setTraversalResult({ type: 'Pre-Order', values: result });
+    
+    // Animate the traversal
+    animateTraversal(result);
   };
 
   const handlePostOrder = () => {
     setOperation('traversal');
     const result = postOrderTraversal();
     setTraversalResult({ type: 'Post-Order', values: result });
+    
+    // Animate the traversal
+    animateTraversal(result);
   };
 
   const handleClearTree = () => {
@@ -598,10 +648,6 @@ const TreesPage = () => {
     }
   };
 
-  const handleNodeDragStart = (nodeId) => {
-    setDraggedNode(nodeId);
-  };
-
   const handleNodeDrag = (e, nodeId) => {
     if (draggedNode === nodeId) {
       const newNodes = [...treeNodes];
@@ -636,12 +682,11 @@ const TreesPage = () => {
 
   const handleTouchMove = (e, nodeId) => {
     if (draggedNode === nodeId && e.touches && e.touches[0]) {
-      e.preventDefault(); // Prevent scrolling while dragging
+      e.preventDefault();
       
       const newNodes = [...treeNodes];
       const node = newNodes.find(n => n.id === nodeId);
       if (node && containerRef.current) {
-        // Get container bounds
         const containerRect = containerRef.current.getBoundingClientRect();
         
         // Get current touch position relative to container
@@ -664,6 +709,27 @@ const TreesPage = () => {
 
   const handleTouchEnd = () => {
     setDraggedNode(null);
+  };
+
+  // Add a function to animate traversals
+  const animateTraversal = async (nodeValues) => {
+    // Clear any existing highlights
+    setHighlightPath([]);
+    
+    // Animate each node in sequence
+    for (let i = 0; i < nodeValues.length; i++) {
+      setHighlightPath([nodeValues[i]]);
+      await new Promise(resolve => setTimeout(resolve, 700)); // Delay between each step
+    }
+    
+    // Clear highlights after animation is complete
+    setTimeout(() => {
+      setHighlightPath([]);
+    }, 500);
+  };
+
+  const handleNodeDragStart = (nodeId) => {
+    setDraggedNode(nodeId);
   };
 
   const operationInfo = getOperationDescription();
@@ -763,18 +829,34 @@ const TreesPage = () => {
               if (!fromNode || !toNode) return null;
               
               // Create path from center of one node to center of another
-              const fromX = fromNode.x + 25; // center of node
+              // Add 25px offset to reach the center of each node (which is 50px wide)
+              const fromX = fromNode.x + 25;
               const fromY = fromNode.y + 25;
               const toX = toNode.x + 25;
               const toY = toNode.y + 25;
               
+              // Calculate midpoint for direction label
+              const midX = (fromX + toX) / 2;
+              const midY = (fromY + toY) / 2 - 5; // Offset label slightly above the line
+              
+              // Simple straight line for the edge
               const pathData = `M ${fromX} ${fromY} L ${toX} ${toY}`;
               
               return (
-                <Edge
-                  key={index}
-                  d={pathData}
-                />
+                <React.Fragment key={index}>
+                  <Edge d={pathData} />
+                  {edge.direction && (
+                    <DirectionLabel 
+                      type={edge.direction}
+                      x={midX}
+                      y={midY}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                    >
+                      {edge.direction === 'left' ? 'L' : 'R'}
+                    </DirectionLabel>
+                  )}
+                </React.Fragment>
               );
             })}
           </EdgeContainer>
@@ -785,7 +867,9 @@ const TreesPage = () => {
               highlight={highlightPath.includes(node.value)}
               style={{
                 left: `${node.x}px`,
-                top: `${node.y}px`
+                top: `${node.y}px`,
+                borderColor: node.direction === 'left' ? '#2196F3' : 
+                           node.direction === 'right' ? '#FF5722' : 'transparent'
               }}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -798,8 +882,19 @@ const TreesPage = () => {
               onTouchStart={() => handleTouchStart(node.id)}
               onTouchMove={(e) => handleTouchMove(e, node.id)}
               onTouchEnd={handleTouchEnd}
+              data-node="true"
+              data-value={node.value}
+              data-level={node.level}
+              data-direction={node.direction || 'root'}
             >
-              {node.value}
+              <NodeContent type={node.direction}>
+                {node.value}
+                {node.direction && (
+                  <NodePosition type={node.direction}>
+                    {node.direction === 'left' ? 'L' : 'R'}
+                  </NodePosition>
+                )}
+              </NodeContent>
             </TreeNode>
           ))}
         </TreeContainer>
