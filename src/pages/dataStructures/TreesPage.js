@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
+import CodeViewer from '../../components/common/CodeViewer';
 
 const PageContainer = styled.div`
   min-height: calc(100vh - 70px);
@@ -266,6 +267,26 @@ const TraversalPath = styled.path`
   }
 `;
 
+const TabContainer = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin: 1rem 0;
+`;
+
+const TabButton = styled.button`
+  padding: 0.5rem 1rem;
+  background: ${props => props.active ? 'var(--primary)' : '#f0f0f0'};
+  color: ${props => props.active ? 'white' : 'var(--text-secondary)'};
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: ${props => props.active ? 'var(--primary)' : '#e0e0e0'};
+  }
+`;
+
 class TreeNodeClass {
   constructor(value) {
     this.value = value;
@@ -365,6 +386,7 @@ const TreesPage = () => {
   const containerRef = useRef(null);
   const [animationSpeed, setAnimationSpeed] = useState(700); // Default animation speed in ms
   const [traversalPath, setTraversalPath] = useState([]); // Store traversal path for visualization
+  const [activeTab, setActiveTab] = useState('visualization'); // 'visualization' or 'code'
 
   // Helper functions for heap operations moved inside component
   const treeToArray = (node) => {
@@ -1131,6 +1153,241 @@ const TreesPage = () => {
     setRoot(initialTree);
   }, [treeType]);
 
+  const bstCode = `public class BinarySearchTree {
+    private Node root;
+    
+    private class Node {
+        int value;
+        Node left;
+        Node right;
+        
+        Node(int value) {
+            this.value = value;
+            left = null;
+            right = null;
+        }
+    }
+    
+    public void insert(int value) {
+        root = insertRec(root, value);
+    }
+    
+    private Node insertRec(Node root, int value) {
+        if (root == null) {
+            root = new Node(value);
+            return root;
+        }
+        
+        if (value < root.value)
+            root.left = insertRec(root.left, value);
+        else if (value > root.value)
+            root.right = insertRec(root.right, value);
+            
+        return root;
+    }
+    
+    public void delete(int value) {
+        root = deleteRec(root, value);
+    }
+    
+    private Node deleteRec(Node root, int value) {
+        if (root == null) return root;
+        
+        if (value < root.value)
+            root.left = deleteRec(root.left, value);
+        else if (value > root.value)
+            root.right = deleteRec(root.right, value);
+        else {
+            // Node with only one child or no child
+            if (root.left == null)
+                return root.right;
+            else if (root.right == null)
+                return root.left;
+                
+            // Node with two children
+            root.value = minValue(root.right);
+            root.right = deleteRec(root.right, root.value);
+        }
+        
+        return root;
+    }
+    
+    private int minValue(Node root) {
+        int minv = root.value;
+        while (root.left != null) {
+            minv = root.left.value;
+            root = root.left;
+        }
+        return minv;
+    }
+}`;
+
+  const avlCode = `public class AVLTree {
+    private Node root;
+    
+    private class Node {
+        int value;
+        Node left;
+        Node right;
+        int height;
+        int balanceFactor;
+        
+        Node(int value) {
+            this.value = value;
+            left = null;
+            right = null;
+            height = 1;
+            balanceFactor = 0;
+        }
+    }
+    
+    private int height(Node node) {
+        return node == null ? 0 : node.height;
+    }
+    
+    private int getBalanceFactor(Node node) {
+        return node == null ? 0 : height(node.left) - height(node.right);
+    }
+    
+    private Node rotateRight(Node y) {
+        Node x = y.left;
+        Node T2 = x.right;
+        
+        x.right = y;
+        y.left = T2;
+        
+        y.height = Math.max(height(y.left), height(y.right)) + 1;
+        x.height = Math.max(height(x.left), height(x.right)) + 1;
+        
+        return x;
+    }
+    
+    private Node rotateLeft(Node x) {
+        Node y = x.right;
+        Node T2 = y.left;
+        
+        y.left = x;
+        x.right = T2;
+        
+        x.height = Math.max(height(x.left), height(x.right)) + 1;
+        y.height = Math.max(height(y.left), height(y.right)) + 1;
+        
+        return y;
+    }
+    
+    public void insert(int value) {
+        root = insertRec(root, value);
+    }
+    
+    private Node insertRec(Node node, int value) {
+        if (node == null)
+            return new Node(value);
+            
+        if (value < node.value)
+            node.left = insertRec(node.left, value);
+        else if (value > node.value)
+            node.right = insertRec(node.right, value);
+        else
+            return node;
+            
+        node.height = Math.max(height(node.left), height(node.right)) + 1;
+        int balance = getBalanceFactor(node);
+        
+        // Left Left Case
+        if (balance > 1 && value < node.left.value)
+            return rotateRight(node);
+            
+        // Right Right Case
+        if (balance < -1 && value > node.right.value)
+            return rotateLeft(node);
+            
+        // Left Right Case
+        if (balance > 1 && value > node.left.value) {
+            node.left = rotateLeft(node.left);
+            return rotateRight(node);
+        }
+        
+        // Right Left Case
+        if (balance < -1 && value < node.right.value) {
+            node.right = rotateRight(node.right);
+            return rotateLeft(node);
+        }
+        
+        return node;
+    }
+}`;
+
+  const heapCode = `public class MaxHeap {
+    private ArrayList<Integer> heap;
+    
+    public MaxHeap() {
+        heap = new ArrayList<>();
+    }
+    
+    private int parent(int i) {
+        return (i - 1) / 2;
+    }
+    
+    private int leftChild(int i) {
+        return 2 * i + 1;
+    }
+    
+    private int rightChild(int i) {
+        return 2 * i + 2;
+    }
+    
+    private void swap(int i, int j) {
+        int temp = heap.get(i);
+        heap.set(i, heap.get(j));
+        heap.set(j, temp);
+    }
+    
+    private void heapifyUp(int i) {
+        int parent = parent(i);
+        if (parent >= 0 && heap.get(parent) < heap.get(i)) {
+            swap(parent, i);
+            heapifyUp(parent);
+        }
+    }
+    
+    private void heapifyDown(int i) {
+        int largest = i;
+        int left = leftChild(i);
+        int right = rightChild(i);
+        
+        if (left < heap.size() && heap.get(left) > heap.get(largest))
+            largest = left;
+            
+        if (right < heap.size() && heap.get(right) > heap.get(largest))
+            largest = right;
+            
+        if (largest != i) {
+            swap(i, largest);
+            heapifyDown(largest);
+        }
+    }
+    
+    public void insert(int value) {
+        heap.add(value);
+        heapifyUp(heap.size() - 1);
+    }
+    
+    public int extractMax() {
+        if (heap.isEmpty())
+            throw new IllegalStateException("Heap is empty");
+            
+        int max = heap.get(0);
+        int lastElement = heap.remove(heap.size() - 1);
+        
+        if (!heap.isEmpty()) {
+            heap.set(0, lastElement);
+            heapifyDown(0);
+        }
+        
+        return max;
+    }
+}`;
+
   return (
     <PageContainer>
       <Header>
@@ -1141,221 +1398,261 @@ const TreesPage = () => {
       </Header>
       
       <VisualizationContainer>
-        <OptionsContainer>
-          <OptionButton 
-            active={treeType === 'bst'} 
-            onClick={() => setTreeType('bst')}
+        <TabContainer>
+          <TabButton 
+            active={activeTab === 'visualization'} 
+            onClick={() => setActiveTab('visualization')}
           >
-            Binary Search Tree
-          </OptionButton>
-          <OptionButton 
-            active={treeType === 'avl'} 
-            onClick={() => setTreeType('avl')}
+            Visualization
+          </TabButton>
+          <TabButton 
+            active={activeTab === 'code'} 
+            onClick={() => setActiveTab('code')}
           >
-            AVL Tree (Balanced)
-          </OptionButton>
-          <OptionButton 
-            active={treeType === 'heap'} 
-            onClick={() => setTreeType('heap')}
-          >
-            Heap
-          </OptionButton>
-        </OptionsContainer>
-        
-        <Instructions>
-          <strong>Interactive Tree:</strong>
-          <ul>
-            <li>Drag any node to reposition it</li>
-            <li>The tree edges will automatically adjust to follow the nodes</li>
-            <li>Use the operations below to modify the tree structure</li>
-          </ul>
-          
-          {treeType === 'bst' && (
-            <div>
-              <strong>Binary Search Tree Properties:</strong>
+            Implementation
+          </TabButton>
+        </TabContainer>
+
+        {activeTab === 'visualization' ? (
+          <>
+            <OptionsContainer>
+              <OptionButton 
+                active={treeType === 'bst'} 
+                onClick={() => setTreeType('bst')}
+              >
+                Binary Search Tree
+              </OptionButton>
+              <OptionButton 
+                active={treeType === 'avl'} 
+                onClick={() => setTreeType('avl')}
+              >
+                AVL Tree (Balanced)
+              </OptionButton>
+              <OptionButton 
+                active={treeType === 'heap'} 
+                onClick={() => setTreeType('heap')}
+              >
+                Heap
+              </OptionButton>
+            </OptionsContainer>
+            
+            <Instructions>
+              <strong>Interactive Tree:</strong>
               <ul>
-                <li>Left child is less than parent</li>
-                <li>Right child is greater than parent</li>
-                <li>Search operations are O(log n) on average, O(n) worst case</li>
+                <li>Drag any node to reposition it</li>
+                <li>The tree edges will automatically adjust to follow the nodes</li>
+                <li>Use the operations below to modify the tree structure</li>
               </ul>
-            </div>
-          )}
-          
-          {treeType === 'avl' && (
-            <div>
-              <strong>AVL Tree Properties:</strong>
-              <ul>
-                <li>Self-balancing binary search tree</li>
-                <li>For any node, height difference between left and right subtrees is at most 1</li>
-                <li>Maintains O(log n) time complexity for all operations</li>
-                <li>Automatically rebalances after insertions and deletions</li>
-              </ul>
-            </div>
-          )}
-          
-          {treeType === 'heap' && (
-            <div>
-              <strong>Max Heap Properties:</strong>
-              <ul>
-                <li>Complete binary tree where parent is always greater than children</li>
-                <li>Root contains the maximum value</li>
-                <li>Insert and delete operations maintain the heap property</li>
-                <li>Used for priority queues and heap sort</li>
-              </ul>
-            </div>
-          )}
-        </Instructions>
-        
-        <ControlsContainer>
-          <div>
-            <label>Value: </label>
-            <Input 
-              type="text" 
-              value={value} 
-              onChange={e => setValue(e.target.value)} 
-              placeholder="Value" 
-            />
-          </div>
-          <OperationButton onClick={handleInsert}>Insert</OperationButton>
-          <OperationButton onClick={handleDelete} variant="secondary">Delete</OperationButton>
-          <OperationButton onClick={handleSearch}>Search</OperationButton>
-          <OperationButton onClick={handleClearTree} variant="secondary">Clear Tree</OperationButton>
-        </ControlsContainer>
-        
-        <ControlsContainer>
-          <OperationButton onClick={handleInOrder}>In-Order</OperationButton>
-          <OperationButton onClick={handlePreOrder}>Pre-Order</OperationButton>
-          <OperationButton onClick={handlePostOrder}>Post-Order</OperationButton>
-        </ControlsContainer>
-        
-        <SpeedControlContainer>
-          <SpeedButton onClick={decreaseSpeed}>
-            <span role="img" aria-label="Decrease Speed">🐢</span>
-          </SpeedButton>
-          <SpeedLabel>Animation Speed: {animationSpeed === 100 ? 'Very Fast' : 
-                                          animationSpeed <= 300 ? 'Fast' : 
-                                          animationSpeed <= 700 ? 'Normal' : 
-                                          animationSpeed <= 1100 ? 'Slow' : 'Very Slow'}</SpeedLabel>
-          <SpeedButton onClick={increaseSpeed}>
-            <span role="img" aria-label="Increase Speed">🐇</span>
-          </SpeedButton>
-        </SpeedControlContainer>
-        
-        <AnimatePresence>
-          {message && (
-            <MessageContainer 
-              type={message.type}
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-            >
-              {message.text}
-            </MessageContainer>
-          )}
-        </AnimatePresence>
-        
-        {traversalResult && (
-          <TraversalResult>
-            <strong>{traversalResult.type} Traversal:</strong>
-            <div style={{ marginTop: '0.5rem' }}>
-              {traversalResult.values.map((value, index) => (
-                <TraversalNode key={index}>{value}</TraversalNode>
+              
+              {treeType === 'bst' && (
+                <div>
+                  <strong>Binary Search Tree Properties:</strong>
+                  <ul>
+                    <li>Left child is less than parent</li>
+                    <li>Right child is greater than parent</li>
+                    <li>Search operations are O(log n) on average, O(n) worst case</li>
+                  </ul>
+                </div>
+              )}
+              
+              {treeType === 'avl' && (
+                <div>
+                  <strong>AVL Tree Properties:</strong>
+                  <ul>
+                    <li>Self-balancing binary search tree</li>
+                    <li>For any node, height difference between left and right subtrees is at most 1</li>
+                    <li>Maintains O(log n) time complexity for all operations</li>
+                    <li>Automatically rebalances after insertions and deletions</li>
+                  </ul>
+                </div>
+              )}
+              
+              {treeType === 'heap' && (
+                <div>
+                  <strong>Max Heap Properties:</strong>
+                  <ul>
+                    <li>Complete binary tree where parent is always greater than children</li>
+                    <li>Root contains the maximum value</li>
+                    <li>Insert and delete operations maintain the heap property</li>
+                    <li>Used for priority queues and heap sort</li>
+                  </ul>
+                </div>
+              )}
+            </Instructions>
+            
+            <ControlsContainer>
+              <div>
+                <label>Value: </label>
+                <Input 
+                  type="text" 
+                  value={value} 
+                  onChange={e => setValue(e.target.value)} 
+                  placeholder="Value" 
+                />
+              </div>
+              <OperationButton onClick={handleInsert}>Insert</OperationButton>
+              <OperationButton onClick={handleDelete} variant="secondary">Delete</OperationButton>
+              <OperationButton onClick={handleSearch}>Search</OperationButton>
+              <OperationButton onClick={handleClearTree} variant="secondary">Clear Tree</OperationButton>
+            </ControlsContainer>
+            
+            <ControlsContainer>
+              <OperationButton onClick={handleInOrder}>In-Order</OperationButton>
+              <OperationButton onClick={handlePreOrder}>Pre-Order</OperationButton>
+              <OperationButton onClick={handlePostOrder}>Post-Order</OperationButton>
+            </ControlsContainer>
+            
+            <SpeedControlContainer>
+              <SpeedButton onClick={decreaseSpeed}>
+                <span role="img" aria-label="Decrease Speed">🐢</span>
+              </SpeedButton>
+              <SpeedLabel>Animation Speed: {animationSpeed === 100 ? 'Very Fast' : 
+                                              animationSpeed <= 300 ? 'Fast' : 
+                                              animationSpeed <= 700 ? 'Normal' : 
+                                              animationSpeed <= 1100 ? 'Slow' : 'Very Slow'}</SpeedLabel>
+              <SpeedButton onClick={increaseSpeed}>
+                <span role="img" aria-label="Increase Speed">🐇</span>
+              </SpeedButton>
+            </SpeedControlContainer>
+            
+            <AnimatePresence>
+              {message && (
+                <MessageContainer 
+                  type={message.type}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  {message.text}
+                </MessageContainer>
+              )}
+            </AnimatePresence>
+            
+            {traversalResult && (
+              <TraversalResult>
+                <strong>{traversalResult.type} Traversal:</strong>
+                <div style={{ marginTop: '0.5rem' }}>
+                  {traversalResult.values.map((value, index) => (
+                    <TraversalNode key={index}>{value}</TraversalNode>
+                  ))}
+                </div>
+              </TraversalResult>
+            )}
+            
+            <TreeContainer ref={containerRef}>
+              <EdgeContainer>
+                {/* Render traversal path if it exists */}
+                {traversalPath.length > 1 && (
+                  <TraversalPath 
+                    d={traversalPath.map((node, i) => {
+                      // Calculate center of the node
+                      const x = node.x + 25;
+                      const y = node.y + 25;
+                      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                    }).join(' ')}
+                  />
+                )}
+              
+                {treeEdges.map((edge, index) => {
+                  const fromNode = treeNodes.find(n => n.id === edge.from);
+                  const toNode = treeNodes.find(n => n.id === edge.to);
+                  
+                  if (!fromNode || !toNode) return null;
+                  
+                  // Create path from center of one node to center of another
+                  // Add 25px offset to reach the center of each node (which is 50px wide)
+                  const fromX = fromNode.x + 25;
+                  const fromY = fromNode.y + 25;
+                  const toX = toNode.x + 25;
+                  const toY = toNode.y + 25;
+                  
+                  // Calculate midpoint for direction label
+                  const midX = (fromX + toX) / 2;
+                  const midY = (fromY + toY) / 2 - 5; // Offset label slightly above the line
+                  
+                  // Simple straight line for the edge
+                  const pathData = `M ${fromX} ${fromY} L ${toX} ${toY}`;
+                  
+                  return (
+                    <React.Fragment key={index}>
+                      <Edge d={pathData} />
+                      {edge.direction && (
+                        <DirectionLabel 
+                          type={edge.direction}
+                          x={midX}
+                          y={midY}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                        >
+                          {edge.direction === 'left' ? 'L' : 'R'}
+                        </DirectionLabel>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </EdgeContainer>
+              
+              {treeNodes.map((node) => (
+                <TreeNode
+                  key={node.id}
+                  highlight={highlightPath.includes(node.value)}
+                  style={{
+                    left: `${node.x}px`,
+                    top: `${node.y}px`,
+                    borderColor: node.direction === 'left' ? '#2196F3' : 
+                               node.direction === 'right' ? '#FF5722' : 'transparent'
+                  }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.3 }}
+                  onMouseDown={() => handleNodeDragStart(node.id)}
+                  onMouseMove={(e) => handleNodeDrag(e, node.id)}
+                  onMouseUp={handleNodeDragEnd}
+                  onMouseLeave={handleNodeDragEnd}
+                  onTouchStart={() => handleTouchStart(node.id)}
+                  onTouchMove={(e) => handleTouchMove(e, node.id)}
+                  onTouchEnd={handleTouchEnd}
+                  data-node="true"
+                  data-value={node.value}
+                  data-level={node.level}
+                  data-direction={node.direction || 'root'}
+                >
+                  <NodeContent>
+                    {node.value}
+                  </NodeContent>
+                </TreeNode>
               ))}
-            </div>
-          </TraversalResult>
-        )}
-        
-        <TreeContainer ref={containerRef}>
-          <EdgeContainer>
-            {/* Render traversal path if it exists */}
-            {traversalPath.length > 1 && (
-              <TraversalPath 
-                d={traversalPath.map((node, i) => {
-                  // Calculate center of the node
-                  const x = node.x + 25;
-                  const y = node.y + 25;
-                  return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
-                }).join(' ')}
+            </TreeContainer>
+            
+            {operationInfo && (
+              <OperationDescription>
+                <OperationTitle>{operationInfo.title}</OperationTitle>
+                <p>{operationInfo.description}</p>
+              </OperationDescription>
+            )}
+          </>
+        ) : (
+          <div>
+            {treeType === 'bst' && (
+              <CodeViewer 
+                title="Binary Search Tree Implementation" 
+                code={bstCode}
               />
             )}
-          
-            {treeEdges.map((edge, index) => {
-              const fromNode = treeNodes.find(n => n.id === edge.from);
-              const toNode = treeNodes.find(n => n.id === edge.to);
-              
-              if (!fromNode || !toNode) return null;
-              
-              // Create path from center of one node to center of another
-              // Add 25px offset to reach the center of each node (which is 50px wide)
-              const fromX = fromNode.x + 25;
-              const fromY = fromNode.y + 25;
-              const toX = toNode.x + 25;
-              const toY = toNode.y + 25;
-              
-              // Calculate midpoint for direction label
-              const midX = (fromX + toX) / 2;
-              const midY = (fromY + toY) / 2 - 5; // Offset label slightly above the line
-              
-              // Simple straight line for the edge
-              const pathData = `M ${fromX} ${fromY} L ${toX} ${toY}`;
-              
-              return (
-                <React.Fragment key={index}>
-                  <Edge d={pathData} />
-                  {edge.direction && (
-                    <DirectionLabel 
-                      type={edge.direction}
-                      x={midX}
-                      y={midY}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                    >
-                      {edge.direction === 'left' ? 'L' : 'R'}
-                    </DirectionLabel>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </EdgeContainer>
-          
-          {treeNodes.map((node) => (
-            <TreeNode
-              key={node.id}
-              highlight={highlightPath.includes(node.value)}
-              style={{
-                left: `${node.x}px`,
-                top: `${node.y}px`,
-                borderColor: node.direction === 'left' ? '#2196F3' : 
-                           node.direction === 'right' ? '#FF5722' : 'transparent'
-              }}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.3 }}
-              onMouseDown={() => handleNodeDragStart(node.id)}
-              onMouseMove={(e) => handleNodeDrag(e, node.id)}
-              onMouseUp={handleNodeDragEnd}
-              onMouseLeave={handleNodeDragEnd}
-              onTouchStart={() => handleTouchStart(node.id)}
-              onTouchMove={(e) => handleTouchMove(e, node.id)}
-              onTouchEnd={handleTouchEnd}
-              data-node="true"
-              data-value={node.value}
-              data-level={node.level}
-              data-direction={node.direction || 'root'}
-            >
-              <NodeContent>
-                {node.value}
-              </NodeContent>
-            </TreeNode>
-          ))}
-        </TreeContainer>
-        
-        {operationInfo && (
-          <OperationDescription>
-            <OperationTitle>{operationInfo.title}</OperationTitle>
-            <p>{operationInfo.description}</p>
-          </OperationDescription>
+            {treeType === 'avl' && (
+              <CodeViewer 
+                title="AVL Tree Implementation" 
+                code={avlCode}
+              />
+            )}
+            {treeType === 'heap' && (
+              <CodeViewer 
+                title="Max Heap Implementation" 
+                code={heapCode}
+              />
+            )}
+          </div>
         )}
       </VisualizationContainer>
     </PageContainer>

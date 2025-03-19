@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
+import CodeViewer from '../../components/common/CodeViewer';
 
 const PageContainer = styled.div`
   min-height: calc(100vh - 70px);
@@ -104,6 +105,26 @@ const OperationTitle = styled.h3`
   color: var(--primary);
 `;
 
+const TabContainer = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin: 1rem 0;
+`;
+
+const TabButton = styled.button`
+  padding: 0.5rem 1rem;
+  background: ${props => props.active ? 'var(--primary)' : '#f0f0f0'};
+  color: ${props => props.active ? 'white' : 'var(--text-secondary)'};
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: ${props => props.active ? 'var(--primary)' : '#e0e0e0'};
+  }
+`;
+
 const ArraysPage = () => {
   const [array, setArray] = useState([10, 20, 30, 40, 50]);
   const [value, setValue] = useState('');
@@ -111,6 +132,7 @@ const ArraysPage = () => {
   const [message, setMessage] = useState(null);
   const [operation, setOperation] = useState(null);
   const [highlightIndex, setHighlightIndex] = useState(-1);
+  const [activeTab, setActiveTab] = useState('visualization'); // 'visualization' or 'code'
 
   const showMessage = (text, type = 'success') => {
     setMessage({ text, type });
@@ -236,6 +258,65 @@ const ArraysPage = () => {
 
   const operationInfo = getOperationDescription();
 
+  const arrayCode = `public class DynamicArray {
+    private int[] arr;
+    private int size;
+    private int capacity;
+    
+    public DynamicArray() {
+        capacity = 10;
+        arr = new int[capacity];
+        size = 0;
+    }
+    
+    public void insert(int value, int index) {
+        if (index < 0 || index > size)
+            throw new IndexOutOfBoundsException("Invalid index");
+            
+        if (size == capacity)
+            resize();
+            
+        // Shift elements to the right
+        for (int i = size; i > index; i--)
+            arr[i] = arr[i-1];
+            
+        arr[index] = value;
+        size++;
+    }
+    
+    public void remove(int index) {
+        if (index < 0 || index >= size)
+            throw new IndexOutOfBoundsException("Invalid index");
+            
+        // Shift elements to the left
+        for (int i = index; i < size - 1; i++)
+            arr[i] = arr[i+1];
+            
+        size--;
+    }
+    
+    public int search(int value) {
+        for (int i = 0; i < size; i++)
+            if (arr[i] == value)
+                return i;
+        return -1;
+    }
+    
+    private void resize() {
+        capacity *= 2;
+        int[] newArr = new int[capacity];
+        for (int i = 0; i < size; i++)
+            newArr[i] = arr[i];
+        arr = newArr;
+    }
+    
+    public int get(int index) {
+        if (index < 0 || index >= size)
+            throw new IndexOutOfBoundsException("Invalid index");
+        return arr[index];
+    }
+}`;
+
   return (
     <PageContainer>
       <Header>
@@ -246,65 +327,89 @@ const ArraysPage = () => {
       </Header>
       
       <VisualizationContainer>
-        <ControlsContainer>
-          <div>
-            <label>Value: </label>
-            <Input 
-              type="text" 
-              value={value} 
-              onChange={e => setValue(e.target.value)} 
-              placeholder="Value" 
-            />
-          </div>
-          <div>
-            <label>Index: </label>
-            <Input 
-              type="text" 
-              value={index} 
-              onChange={e => setIndex(e.target.value)} 
-              placeholder="Index" 
-            />
-          </div>
-          <OperationButton onClick={handleInsert}>Insert</OperationButton>
-          <OperationButton onClick={handleRemove} variant="secondary">Remove</OperationButton>
-          <OperationButton onClick={handleSearch}>Search</OperationButton>
-        </ControlsContainer>
-        
-        <AnimatePresence>
-          {message && (
-            <MessageContainer 
-              type={message.type}
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-            >
-              {message.text}
-            </MessageContainer>
-          )}
-        </AnimatePresence>
-        
-        <ArrayContainer>
-          {array.map((item, i) => (
-            <ArrayItem 
-              key={`${i}-${item}`}
-              highlight={i === highlightIndex}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.3 }}
-              layout
-            >
-              <IndexLabel>{i}</IndexLabel>
-              {item}
-            </ArrayItem>
-          ))}
-        </ArrayContainer>
-        
-        {operationInfo && (
-          <OperationDescription>
-            <OperationTitle>{operationInfo.title}</OperationTitle>
-            <p>{operationInfo.description}</p>
-          </OperationDescription>
+        <TabContainer>
+          <TabButton 
+            active={activeTab === 'visualization'} 
+            onClick={() => setActiveTab('visualization')}
+          >
+            Visualization
+          </TabButton>
+          <TabButton 
+            active={activeTab === 'code'} 
+            onClick={() => setActiveTab('code')}
+          >
+            Implementation
+          </TabButton>
+        </TabContainer>
+
+        {activeTab === 'visualization' ? (
+          <>
+            <ControlsContainer>
+              <div>
+                <label>Value: </label>
+                <Input 
+                  type="text" 
+                  value={value} 
+                  onChange={e => setValue(e.target.value)} 
+                  placeholder="Value" 
+                />
+              </div>
+              <div>
+                <label>Index: </label>
+                <Input 
+                  type="text" 
+                  value={index} 
+                  onChange={e => setIndex(e.target.value)} 
+                  placeholder="Index" 
+                />
+              </div>
+              <OperationButton onClick={handleInsert}>Insert</OperationButton>
+              <OperationButton onClick={handleRemove} variant="secondary">Remove</OperationButton>
+              <OperationButton onClick={handleSearch}>Search</OperationButton>
+            </ControlsContainer>
+            
+            <AnimatePresence>
+              {message && (
+                <MessageContainer 
+                  type={message.type}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  {message.text}
+                </MessageContainer>
+              )}
+            </AnimatePresence>
+            
+            <ArrayContainer>
+              {array.map((item, i) => (
+                <ArrayItem 
+                  key={`${i}-${item}`}
+                  highlight={i === highlightIndex}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.3 }}
+                  layout
+                >
+                  <IndexLabel>{i}</IndexLabel>
+                  {item}
+                </ArrayItem>
+              ))}
+            </ArrayContainer>
+            
+            {operationInfo && (
+              <OperationDescription>
+                <OperationTitle>{operationInfo.title}</OperationTitle>
+                <p>{operationInfo.description}</p>
+              </OperationDescription>
+            )}
+          </>
+        ) : (
+          <CodeViewer 
+            title="Dynamic Array Implementation" 
+            code={arrayCode}
+          />
         )}
       </VisualizationContainer>
     </PageContainer>

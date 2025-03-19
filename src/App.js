@@ -13,6 +13,7 @@ import QueuesPage from './pages/dataStructures/QueuesPage';
 import TreesPage from './pages/dataStructures/TreesPage';
 import HashTablesPage from './pages/dataStructures/HashTablesPage';
 import GraphsPage from './pages/dataStructures/GraphsPage';
+import HeapsPage from './pages/dataStructures/HeapsPage';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -42,6 +43,7 @@ function App() {
             <Route path="/data-structures/trees" element={<TreesPage />} />
             <Route path="/data-structures/hash-tables" element={<HashTablesPage />} />
             <Route path="/data-structures/graphs" element={<GraphsPage />} />
+            <Route path="/data-structures/heaps" element={<HeapsPage />} />
             {/* More data structure routes will be added as we implement them */}
           </Routes>
         </MainContent>
