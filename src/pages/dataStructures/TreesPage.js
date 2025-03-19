@@ -50,15 +50,6 @@ const TreeContainer = styled.div`
   background: #f9f9f9;
 `;
 
-const TreeLevel = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 3rem;
-  position: relative;
-  width: 100%;
-`;
-
 const TreeNode = styled(motion.div)`
   width: 50px;
   height: 50px;
@@ -209,6 +200,7 @@ const TreesPage = () => {
   const [traversalResult, setTraversalResult] = useState(null);
   const [treeType, setTreeType] = useState('bst'); // bst, avl, heap
   const [draggedNode, setDraggedNode] = useState(null);
+  const [containerBounds, setContainerBounds] = useState({ width: 0, height: 0 });
   const containerRef = useRef(null);
 
   // Function to position nodes in a tree layout
@@ -217,16 +209,31 @@ const TreesPage = () => {
     
     const nodes = [];
     const edges = [];
-    const levelWidth = 180;
-    const levelHeight = 100;
     
-    // Traverse the tree to assign positions
-    const traverse = (node, level, position, parentId = null) => {
+    // First determine tree depth and width
+    const getTreeDepth = (node) => {
+      if (!node) return 0;
+      return 1 + Math.max(getTreeDepth(node.left), getTreeDepth(node.right));
+    };
+    
+    const treeDepth = getTreeDepth(root);
+    
+    // Width and height of each level
+    const levelHeight = 80;
+    const containerWidth = containerRef.current ? containerRef.current.offsetWidth : 800;
+    const nodeSpacing = Math.min(100, containerWidth / (Math.pow(2, treeDepth - 1) + 1));
+    
+    // Traverse the tree to assign positions using improved algorithm
+    const assignPositions = (node, level, position, parentId = null) => {
       if (!node) return;
       
-      // Calculate horizontal position based on level and position
-      const x = position * levelWidth;
-      const y = level * levelHeight;
+      // Each level gets wider as we go deeper
+      const width = Math.pow(2, level);
+      const leftPadding = containerWidth / 2 - (width * nodeSpacing) / 2;
+      
+      // Calculate x position based on node's position within its level
+      const x = leftPadding + position * nodeSpacing;
+      const y = level * levelHeight + 30; // Add padding from top
       
       const nodeId = nodes.length;
       nodes.push({
@@ -245,31 +252,21 @@ const TreesPage = () => {
         });
       }
       
-      // Calculate child positions (wider spacing at deeper levels)
+      // Calculate positions for children
       if (node.left) {
-        traverse(node.left, level + 1, position - 1 / (level + 1), nodeId);
+        assignPositions(node.left, level + 1, position * 2, nodeId);
       }
       
       if (node.right) {
-        traverse(node.right, level + 1, position + 1 / (level + 1), nodeId);
+        assignPositions(node.right, level + 1, position * 2 + 1, nodeId);
       }
     };
     
-    traverse(root, 0, 0);
-    
-    // Center nodes horizontally
-    if (nodes.length > 0) {
-      const minX = Math.min(...nodes.map(n => n.x));
-      const containerWidth = containerRef.current ? containerRef.current.offsetWidth : 800;
-      const offsetX = (containerWidth / 2) - minX - levelWidth / 2;
-      
-      nodes.forEach(node => {
-        node.x += offsetX;
-      });
-    }
+    // Start position assignment from root
+    assignPositions(root, 0, 0);
     
     return { nodes, edges };
-  }, []);
+  }, [containerRef]);
 
   // Initialize a sample tree when the component mounts
   useEffect(() => {
@@ -292,6 +289,25 @@ const TreesPage = () => {
       setTreeEdges(edges);
     }
   }, [root, positionTreeNodes, containerRef]);
+
+  // Update container bounds when the component mounts or window resizes
+  useEffect(() => {
+    const updateContainerBounds = () => {
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect();
+        setContainerBounds({ width, height });
+      }
+    };
+    
+    updateContainerBounds();
+    
+    // Add resize listener
+    window.addEventListener('resize', updateContainerBounds);
+    
+    return () => {
+      window.removeEventListener('resize', updateContainerBounds);
+    };
+  }, []);
 
   const showMessage = (text, type = 'success') => {
     setMessage({ text, type });
@@ -591,14 +607,62 @@ const TreesPage = () => {
       const newNodes = [...treeNodes];
       const node = newNodes.find(n => n.id === nodeId);
       if (node) {
-        node.x += e.movementX;
-        node.y += e.movementY;
+        // Calculate new position with boundaries
+        const newX = node.x + e.movementX;
+        const newY = node.y + e.movementY;
+        
+        // Node radius is 25px, keep nodes fully inside container
+        const nodeRadius = 25;
+        const maxX = containerBounds.width - nodeRadius * 2;
+        const maxY = containerBounds.height - nodeRadius * 2;
+        
+        // Apply constraints
+        node.x = Math.max(0, Math.min(newX, maxX));
+        node.y = Math.max(0, Math.min(newY, maxY));
+        
         setTreeNodes(newNodes);
       }
     }
   };
 
   const handleNodeDragEnd = () => {
+    setDraggedNode(null);
+  };
+
+  // Add touch event handlers
+  const handleTouchStart = (nodeId) => {
+    setDraggedNode(nodeId);
+  };
+
+  const handleTouchMove = (e, nodeId) => {
+    if (draggedNode === nodeId && e.touches && e.touches[0]) {
+      e.preventDefault(); // Prevent scrolling while dragging
+      
+      const newNodes = [...treeNodes];
+      const node = newNodes.find(n => n.id === nodeId);
+      if (node && containerRef.current) {
+        // Get container bounds
+        const containerRect = containerRef.current.getBoundingClientRect();
+        
+        // Get current touch position relative to container
+        const touchX = e.touches[0].clientX - containerRect.left;
+        const touchY = e.touches[0].clientY - containerRect.top;
+        
+        // Node radius is 25px, keep nodes fully inside container
+        const nodeRadius = 25;
+        const maxX = containerBounds.width - nodeRadius * 2;
+        const maxY = containerBounds.height - nodeRadius * 2;
+        
+        // Apply constraints and set new position
+        node.x = Math.max(0, Math.min(touchX - nodeRadius, maxX));
+        node.y = Math.max(0, Math.min(touchY - nodeRadius, maxY));
+        
+        setTreeNodes(newNodes);
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
     setDraggedNode(null);
   };
 
@@ -731,6 +795,9 @@ const TreesPage = () => {
               onMouseMove={(e) => handleNodeDrag(e, node.id)}
               onMouseUp={handleNodeDragEnd}
               onMouseLeave={handleNodeDragEnd}
+              onTouchStart={() => handleTouchStart(node.id)}
+              onTouchMove={(e) => handleTouchMove(e, node.id)}
+              onTouchEnd={handleTouchEnd}
             >
               {node.value}
             </TreeNode>
