@@ -172,51 +172,26 @@ const AlgorithmsPage = () => {
     {
       id: 'sorting',
       title: 'Sorting Algorithms',
-      subcategories: [
-        {
-          id: 'comparison',
-          title: 'Comparison Sorts',
-          algorithms: [
-            { id: 'bubble', title: 'Bubble Sort', comingSoon: false },
-            { id: 'selection', title: 'Selection Sort', comingSoon: false },
-            { id: 'insertion', title: 'Insertion Sort', comingSoon: false },
-            { id: 'merge', title: 'Merge Sort', comingSoon: false },
-            { id: 'quick', title: 'Quick Sort', comingSoon: false },
-            { id: 'heap', title: 'Heap Sort', comingSoon: false },
-          ]
-        },
-        {
-          id: 'distribution',
-          title: 'Distribution Sorts',
-          algorithms: [
-            { id: 'counting', title: 'Counting Sort', comingSoon: true },
-            { id: 'radix', title: 'Radix Sort', comingSoon: true },
-            { id: 'bucket', title: 'Bucket Sort', comingSoon: true },
-          ]
-        }
+      description: 'Algorithms that put elements of a list in a certain order.',
+      algorithms: [
+        { id: 'bubble', title: 'Bubble Sort', comingSoon: false },
+        { id: 'selection', title: 'Selection Sort', comingSoon: false },
+        { id: 'insertion', title: 'Insertion Sort', comingSoon: false },
+        { id: 'merge', title: 'Merge Sort', comingSoon: false },
+        { id: 'quick', title: 'Quick Sort', comingSoon: false },
+        { id: 'heap', title: 'Heap Sort', comingSoon: false },
       ]
     },
     {
       id: 'searching',
       title: 'Searching Algorithms',
-      subcategories: [
-        {
-          id: 'basic',
-          title: 'Basic Searches',
-          algorithms: [
-            { id: 'linear', title: 'Linear Search', comingSoon: false },
-            { id: 'binary', title: 'Binary Search', comingSoon: false },
-            { id: 'jump', title: 'Jump Search', comingSoon: true },
-          ]
-        },
-        {
-          id: 'advanced',
-          title: 'Advanced Searches',
-          algorithms: [
-            { id: 'interpolation', title: 'Interpolation Search', comingSoon: true },
-            { id: 'exponential', title: 'Exponential Search', comingSoon: true },
-          ]
-        }
+      description: 'Algorithms for finding an item with specified properties within a collection.',
+      algorithms: [
+        { id: 'linear', title: 'Linear Search', comingSoon: false },
+        { id: 'binary', title: 'Binary Search', comingSoon: false },
+        { id: 'jump', title: 'Jump Search', comingSoon: false },
+        { id: 'interpolation', title: 'Interpolation Search', comingSoon: false },
+        { id: 'exponential', title: 'Exponential Search', comingSoon: false },
       ]
     },
     {
@@ -321,49 +296,67 @@ const AlgorithmsPage = () => {
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  {category.subcategories.map((subcategory) => (
-                    <React.Fragment key={subcategory.id}>
-                      <SubcategoryNode 
-                        onClick={() => toggleSubcategory(`${category.id}-${subcategory.id}`)}
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
+                  {category.subcategories ? (
+                    // If the category has subcategories, render them
+                    category.subcategories.map((subcategory) => (
+                      <React.Fragment key={subcategory.id}>
+                        <SubcategoryNode 
+                          onClick={() => toggleSubcategory(`${category.id}-${subcategory.id}`)}
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          {subcategory.title}
+                          <ExpandIcon 
+                            expanded={expandedSubcategories[`${category.id}-${subcategory.id}`]} 
+                            style={{ fontSize: '0.9rem' }}
+                          >
+                            ▼
+                          </ExpandIcon>
+                        </SubcategoryNode>
+                        
+                        <AnimatePresence>
+                          {expandedSubcategories[`${category.id}-${subcategory.id}`] && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              {subcategory.algorithms.map((algorithm) => (
+                                <AlgorithmItem 
+                                  key={algorithm.id}
+                                  to={algorithm.comingSoon ? '#' : `/algorithms/${category.id}/${algorithm.id}`}
+                                  onClick={(e) => algorithm.comingSoon && e.preventDefault()}
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  {algorithm.title}
+                                  {algorithm.comingSoon && <ComingSoonBadge>Coming Soon</ComingSoonBadge>}
+                                </AlgorithmItem>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    // If the category doesn't have subcategories, render algorithms directly
+                    category.algorithms && category.algorithms.map((algorithm) => (
+                      <AlgorithmItem 
+                        key={algorithm.id}
+                        to={algorithm.comingSoon ? '#' : `/algorithms/${category.id}/${algorithm.id}`}
+                        onClick={(e) => algorithm.comingSoon && e.preventDefault()}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
                         transition={{ duration: 0.2 }}
                       >
-                        {subcategory.title}
-                        <ExpandIcon 
-                          expanded={expandedSubcategories[`${category.id}-${subcategory.id}`]} 
-                          style={{ fontSize: '0.9rem' }}
-                        >
-                          ▼
-                        </ExpandIcon>
-                      </SubcategoryNode>
-                      
-                      <AnimatePresence>
-                        {expandedSubcategories[`${category.id}-${subcategory.id}`] && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            {subcategory.algorithms.map((algorithm) => (
-                              <AlgorithmItem 
-                                key={algorithm.id}
-                                to={algorithm.comingSoon ? '#' : `/algorithms/${category.id}/${algorithm.id}`}
-                                onClick={(e) => algorithm.comingSoon && e.preventDefault()}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ duration: 0.2 }}
-                              >
-                                {algorithm.title}
-                                {algorithm.comingSoon && <ComingSoonBadge>Coming Soon</ComingSoonBadge>}
-                              </AlgorithmItem>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </React.Fragment>
-                  ))}
+                        {algorithm.title}
+                        {algorithm.comingSoon && <ComingSoonBadge>Coming Soon</ComingSoonBadge>}
+                      </AlgorithmItem>
+                    ))
+                  )}
                 </SubcategoriesContainer>
               )}
             </React.Fragment>

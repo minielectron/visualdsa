@@ -24,6 +24,9 @@ import BinarySearch from './pages/algorithms/BinarySearch';
 import LinearSearch from './pages/algorithms/LinearSearch';
 import BreadthFirstSearch from './pages/algorithms/BreadthFirstSearch';
 import DepthFirstSearch from './pages/algorithms/DepthFirstSearch';
+import JumpSearch from './pages/algorithms/JumpSearch';
+import InterpolationSearch from './pages/algorithms/InterpolationSearch';
+import ExponentialSearch from './pages/algorithms/ExponentialSearch';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -67,6 +70,9 @@ function App() {
             {/* Searching algorithms */}
             <Route path="/algorithms/searching/binary" element={<BinarySearch />} />
             <Route path="/algorithms/searching/linear" element={<LinearSearch />} />
+            <Route path="/algorithms/searching/jump" element={<JumpSearch />} />
+            <Route path="/algorithms/searching/interpolation" element={<InterpolationSearch />} />
+            <Route path="/algorithms/searching/exponential" element={<ExponentialSearch />} />
             
             {/* Graph algorithms */}
             <Route path="/algorithms/graph/bfs" element={<BreadthFirstSearch />} />
