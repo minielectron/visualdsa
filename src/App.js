@@ -7,6 +7,11 @@ import HomePage from './pages/HomePage';
 import DataStructuresPage from './pages/DataStructuresPage';
 import AlgorithmsPage from './pages/AlgorithmsPage';
 import ArraysPage from './pages/dataStructures/ArraysPage';
+import LinkedListsPage from './pages/dataStructures/LinkedListsPage';
+import StacksPage from './pages/dataStructures/StacksPage';
+import QueuesPage from './pages/dataStructures/QueuesPage';
+import TreesPage from './pages/dataStructures/TreesPage';
+import HashTablesPage from './pages/dataStructures/HashTablesPage';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -30,7 +35,12 @@ function App() {
             <Route path="/data-structures" element={<DataStructuresPage />} />
             <Route path="/algorithms" element={<AlgorithmsPage />} />
             <Route path="/data-structures/arrays" element={<ArraysPage />} />
-            {/* Additional routes will be added for individual data structure pages */}
+            <Route path="/data-structures/linked-lists" element={<LinkedListsPage />} />
+            <Route path="/data-structures/stacks" element={<StacksPage />} />
+            <Route path="/data-structures/queues" element={<QueuesPage />} />
+            <Route path="/data-structures/trees" element={<TreesPage />} />
+            <Route path="/data-structures/hash-tables" element={<HashTablesPage />} />
+            {/* More data structure routes will be added as we implement them */}
           </Routes>
         </MainContent>
       </AppContainer>
