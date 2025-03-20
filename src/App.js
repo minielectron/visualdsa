@@ -27,6 +27,10 @@ import DepthFirstSearch from './pages/algorithms/DepthFirstSearch';
 import JumpSearch from './pages/algorithms/JumpSearch';
 import InterpolationSearch from './pages/algorithms/InterpolationSearch';
 import ExponentialSearch from './pages/algorithms/ExponentialSearch';
+import DijkstrasAlgorithm from './pages/algorithms/DijkstrasAlgorithm';
+import BellmanFord from './pages/algorithms/BellmanFord';
+import FloydWarshall from './pages/algorithms/FloydWarshall';
+import KruskalsAlgorithm from './pages/algorithms/KruskalsAlgorithm';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -77,6 +81,10 @@ function App() {
             {/* Graph algorithms */}
             <Route path="/algorithms/graph/bfs" element={<BreadthFirstSearch />} />
             <Route path="/algorithms/graph/dfs" element={<DepthFirstSearch />} />
+            <Route path="/algorithms/graph/dijkstra" element={<DijkstrasAlgorithm />} />
+            <Route path="/algorithms/graph/bellman-ford" element={<BellmanFord />} />
+            <Route path="/algorithms/graph/floyd-warshall" element={<FloydWarshall />} />
+            <Route path="/algorithms/graph/kruskal" element={<KruskalsAlgorithm />} />
           </Routes>
         </MainContent>
       </AppContainer>

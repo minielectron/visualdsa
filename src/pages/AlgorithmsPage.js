@@ -197,32 +197,12 @@ const AlgorithmsPage = () => {
     {
       id: 'graph',
       title: 'Graph Algorithms',
-      subcategories: [
-        {
-          id: 'traversal',
-          title: 'Graph Traversal',
-          algorithms: [
-            { id: 'bfs', title: 'Breadth-First Search', comingSoon: false },
-            { id: 'dfs', title: 'Depth-First Search', comingSoon: false },
-          ]
-        },
-        {
-          id: 'shortest',
-          title: 'Shortest Path',
-          algorithms: [
-            { id: 'dijkstra', title: 'Dijkstra\'s Algorithm', comingSoon: true },
-            { id: 'bellman-ford', title: 'Bellman-Ford', comingSoon: true },
-            { id: 'floyd-warshall', title: 'Floyd-Warshall', comingSoon: true },
-          ]
-        },
-        {
-          id: 'mst',
-          title: 'Minimum Spanning Tree',
-          algorithms: [
-            { id: 'kruskal', title: 'Kruskal\'s Algorithm', comingSoon: true },
-            { id: 'prim', title: 'Prim\'s Algorithm', comingSoon: true },
-          ]
-        }
+      algorithms: [
+        { id: 'dijkstra', title: 'Dijkstra\'s Algorithm', comingSoon: false },
+        { id: 'bellman-ford', title: 'Bellman-Ford Algorithm', comingSoon: false },
+        { id: 'floyd-warshall', title: 'Floyd-Warshall Algorithm', comingSoon: false },
+        { id: 'kruskal', title: 'Kruskal\'s Algorithm', comingSoon: false },
+        { id: 'prim', title: 'Prim\'s Algorithm', comingSoon: true },
       ]
     },
     {
