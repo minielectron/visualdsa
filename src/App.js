@@ -31,6 +31,7 @@ import DijkstrasAlgorithm from './pages/algorithms/DijkstrasAlgorithm';
 import BellmanFord from './pages/algorithms/BellmanFord';
 import FloydWarshall from './pages/algorithms/FloydWarshall';
 import KruskalsAlgorithm from './pages/algorithms/KruskalsAlgorithm';
+import PrimsAlgorithm from './pages/algorithms/PrimsAlgorithm';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -85,6 +86,7 @@ function App() {
             <Route path="/algorithms/graph/bellman-ford" element={<BellmanFord />} />
             <Route path="/algorithms/graph/floyd-warshall" element={<FloydWarshall />} />
             <Route path="/algorithms/graph/kruskal" element={<KruskalsAlgorithm />} />
+            <Route path="/algorithms/graph/prim" element={<PrimsAlgorithm />} />
           </Routes>
         </MainContent>
       </AppContainer>

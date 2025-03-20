@@ -202,7 +202,7 @@ const AlgorithmsPage = () => {
         { id: 'bellman-ford', title: 'Bellman-Ford Algorithm', comingSoon: false },
         { id: 'floyd-warshall', title: 'Floyd-Warshall Algorithm', comingSoon: false },
         { id: 'kruskal', title: 'Kruskal\'s Algorithm', comingSoon: false },
-        { id: 'prim', title: 'Prim\'s Algorithm', comingSoon: true },
+        { id: 'prim', title: 'Prim\'s Algorithm', comingSoon: false },
       ]
     },
     {
