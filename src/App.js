@@ -32,6 +32,7 @@ import BellmanFord from './pages/algorithms/BellmanFord';
 import FloydWarshall from './pages/algorithms/FloydWarshall';
 import KruskalsAlgorithm from './pages/algorithms/KruskalsAlgorithm';
 import PrimsAlgorithm from './pages/algorithms/PrimsAlgorithm';
+import TopologicalSort from './pages/algorithms/TopologicalSort';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -87,6 +88,7 @@ function App() {
             <Route path="/algorithms/graph/floyd-warshall" element={<FloydWarshall />} />
             <Route path="/algorithms/graph/kruskal" element={<KruskalsAlgorithm />} />
             <Route path="/algorithms/graph/prim" element={<PrimsAlgorithm />} />
+            <Route path="/algorithms/graph/topological-sort" element={<TopologicalSort />} />
           </Routes>
         </MainContent>
       </AppContainer>

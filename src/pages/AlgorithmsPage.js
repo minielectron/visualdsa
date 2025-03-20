@@ -203,6 +203,7 @@ const AlgorithmsPage = () => {
         { id: 'floyd-warshall', title: 'Floyd-Warshall Algorithm', comingSoon: false },
         { id: 'kruskal', title: 'Kruskal\'s Algorithm', comingSoon: false },
         { id: 'prim', title: 'Prim\'s Algorithm', comingSoon: false },
+        { id: 'topological-sort', title: 'Topological Sort', comingSoon: false },
       ]
     },
     {
