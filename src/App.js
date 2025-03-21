@@ -36,6 +36,17 @@ import TopologicalSort from './pages/algorithms/TopologicalSort';
 import Fibonacci from './pages/algorithms/Fibonacci';
 import Knapsack from './pages/algorithms/Knapsack';
 import KMP from './pages/algorithms/KMP';
+import LCS from './pages/algorithms/LCS';
+import LIS from './pages/algorithms/LIS';
+import NaivePatternMatching from './pages/algorithms/NaivePatternMatching';
+import RabinKarp from './pages/algorithms/RabinKarp';
+import LevenshteinDistance from './pages/algorithms/LevenshteinDistance';
+import ZeckendorfRepresentation from './pages/algorithms/ZeckendorfRepresentation';
+import SieveOfEratosthenes from './pages/algorithms/SieveOfEratosthenes';
+import PrimalityTest from './pages/algorithms/PrimalityTest';
+import BoyerMoore from './pages/algorithms/BoyerMoore';
+import Manacher from './pages/algorithms/Manacher';
+import CategoryPage from './pages/algorithms/CategoryPage';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -96,9 +107,25 @@ function App() {
             {/* Dynamic Programming algorithms */}
             <Route path="/algorithms/dynamic/fibonacci" element={<Fibonacci />} />
             <Route path="/algorithms/dynamic/knapsack" element={<Knapsack />} />
+            <Route path="/algorithms/dynamic/lcs" element={<LCS />} />
+            <Route path="/algorithms/dynamic/lis" element={<LIS />} />
             
             {/* String algorithms */}
             <Route path="/algorithms/string/kmp" element={<KMP />} />
+            <Route path="/algorithms/string/naive" element={<NaivePatternMatching />} />
+            <Route path="/algorithms/string/rabin-karp" element={<RabinKarp />} />
+            <Route path="/algorithms/string/boyer-moore" element={<BoyerMoore />} />
+            <Route path="/algorithms/string/manacher" element={<Manacher />} />
+            <Route path="/algorithms/string/levenshtein" element={<LevenshteinDistance />} />
+            
+            {/* Number Theory Algorithms */}
+            <Route path="/algorithms/number-theory/fibonacci" element={<Fibonacci />} />
+            <Route path="/algorithms/number-theory/zeckendorf" element={<ZeckendorfRepresentation />} />
+            <Route path="/algorithms/number-theory/sieve" element={<SieveOfEratosthenes />} />
+            <Route path="/algorithms/number-theory/primality" element={<PrimalityTest />} />
+            
+            {/* Category Pages */}
+            <Route path="/algorithms/:categoryId" element={<CategoryPage />} />
           </Routes>
         </MainContent>
       </AppContainer>
