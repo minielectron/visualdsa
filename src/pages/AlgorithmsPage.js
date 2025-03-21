@@ -214,8 +214,8 @@ const AlgorithmsPage = () => {
           id: 'classic',
           title: 'Classic Problems',
           algorithms: [
-            { id: 'fibonacci', title: 'Fibonacci Sequence', comingSoon: true },
-            { id: 'knapsack', title: '0/1 Knapsack', comingSoon: true },
+            { id: 'fibonacci', title: 'Fibonacci Sequence', comingSoon: false },
+            { id: 'knapsack', title: '0/1 Knapsack', comingSoon: false },
             { id: 'lcs', title: 'Longest Common Subsequence', comingSoon: true },
             { id: 'lis', title: 'Longest Increasing Subsequence', comingSoon: true },
           ]
@@ -231,7 +231,7 @@ const AlgorithmsPage = () => {
           title: 'Pattern Matching',
           algorithms: [
             { id: 'naive', title: 'Naive Pattern Matching', comingSoon: true },
-            { id: 'kmp', title: 'Knuth-Morris-Pratt', comingSoon: true },
+            { id: 'kmp', title: 'Knuth-Morris-Pratt', comingSoon: false },
             { id: 'rabin-karp', title: 'Rabin-Karp', comingSoon: true },
           ]
         },
